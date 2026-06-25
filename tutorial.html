@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impulsis + Zendesk + N8N - Tutorial Completo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center; }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        header p { font-size: 1.2em; opacity: 0.9; }
+        nav { background: #f8f9fa; padding: 15px 40px; border-bottom: 1px solid #dee2e6; }
+        nav a { color: #667eea; text-decoration: none; margin-right: 20px; font-weight: 600; transition: color 0.3s; }
+        nav a:hover { color: #764ba2; }
+        .content { padding: 40px; }
+        section { margin-bottom: 50px; }
+        h2 { color: #667eea; font-size: 2em; margin-bottom: 20px; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+        h3 { color: #764ba2; font-size: 1.5em; margin: 20px 0 15px; }
+        .card { background: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .warning { border-left-color: #dc3545; background: #fff5f5; }
+        .success { border-left-color: #28a745; background: #f0fff4; }
+        .info { border-left-color: #17a2b8; background: #e7f7ff; }
+        code { background: #2d3748; color: #68d391; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 0.9em; }
+        pre { background: #2d3748; color: #e2e8f0; padding: 20px; border-radius: 5px; overflow-x: auto; margin: 15px 0; }
+        pre code { background: transparent; color: inherit; padding: 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        th { background: #667eea; color: white; font-weight: 600; }
+        tr:hover { background: #f8f9fa; }
+        .btn { display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 5px; font-weight: 600; transition: transform 0.3s, box-shadow 0.3s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .version-badge { display: inline-block; background: #28a745; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.9em; font-weight: 600; }
+        ul, ol { margin-left: 30px; margin-top: 10px; }
+        li { margin-bottom: 8px; }
+        footer { background: #2d3748; color: white; text-align: center; padding: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Impulsis + Zendesk + N8N</h1>
+            <p>Tutorial Completo de Implementação</p>
+            <span class="version-badge">v3.0 - Assignee via Comentário</span>
+        </header>
+
+        <nav>
+            <a href="#visao-geral">Visão Geral</a>
+            <a href="#arquitetura">Arquitetura</a>
+            <a href="#instalacao">Instalação</a>
+            <a href="#workflows">Workflows</a>
+            <a href="#configuracao">Configuração</a>
+            <a href="#testes">Testes</a>
+        </nav>
+
+        <div class="content">
+            <section id="visao-geral">
+                <h2>📋 Visão Geral</h2>
+                <div class="card info">
+                    <h3>O que é este projeto?</h3>
+                    <p>Sistema completo de disparo ativo WhatsApp via Impulsis com roteamento automático de tickets via N8N e encerramento sincronizado no Zendesk (WebPosto).</p>
+                </div>
+
+                <h3>Fluxo Operacional</h3>
+                <ol>
+                    <li><strong>Disparo Ativo:</strong> Agente envia mensagem via Impulsis para cliente (sessão WhatsApp encerrada)</li>
+                    <li><strong>Ticket Original:</strong> Recebe tag <code>impulsis_ativo</code> e campo <code>Retorno Ativo</code> marcado</li>
+                    <li><strong>Cliente Responde:</strong> Novo ticket é criado automaticamente pelo Sunshine Conversations</li>
+                    <li><strong>IA-Follow:</strong> Detecta <code>Retorno Ativo</code> e adiciona tag <code>impulsis_novo_contato</code></li>
+                    <li><strong>Workflow 1 (N8N):</strong> Busca agente que enviou a mensagem via comentário Impulsis e roteia ticket novo</li>
+                    <li><strong>Macro Encerramento:</strong> Agente finaliza atendimento e dispara Workflow 2</li>
+                    <li><strong>Workflow 2 (N8N):</strong> Fecha ticket original, limpa campos e remove tags</li>
+                </ol>
+
+                <div class="card success">
+                    <h3>✅ Novidade v3.0 - Assignee via Comentário Impulsis</h3>
+                    <p><strong>Problema Resolvido:</strong> Agora o sistema identifica corretamente o agente que enviou a mensagem ativa, mesmo que seja diferente do assignee original.</p>
+                    <p><strong>Como funciona:</strong> O Workflow 1 busca comentários privados no ticket original, filtra pelo padrão do Impulsis ("Nome do Template:", "Destinatario:") e extrai o <code>author_id</code> do comentário como agente responsável.</p>
+                    <p><strong>Fallback:</strong> Se o comentário não for encontrado, utiliza o assignee original do ticket pai.</p>
+                </div>
+            </section>
+
+            <section id="arquitetura">
+                <h2>🏗️ Arquitetura</h2>
+                
+                <h3>Campos Zendesk Utilizados</h3>
+                <table>
+                    <tr>
+                        <th>Campo</th>
+                        <th>ID</th>
+                        <th>Tipo</th>
+                        <th>Uso</th>
+                    </tr>
+                    <tr>
+                        <td>Retorno Ativo</td>
+                        <td>50639967936148</td>
+                        <td>Checkbox</td>
+                        <td>Sinaliza disparo ativo em andamento</td>
+                    </tr>
+                    <tr>
+                        <td>ID Ticket Pai</td>
+                        <td>41306351713940</td>
+                        <td>Texto</td>
+                        <td>ID do ticket original gravado no ticket novo</td>
+                    </tr>
+                    <tr>
+                        <td>Ticket Pai</td>
+                        <td>41270881369364</td>
+                        <td>Checkbox</td>
+                        <td>Referência visual no ticket original</td>
+                    </tr>
+                    <tr>
+                        <td>Ticket Filho</td>
+                        <td>41270897374356</td>
+                        <td>Checkbox</td>
+                        <td>Referência visual no ticket novo</td>
+                    </tr>
+                </table>
+
+                <h3>Tags Utilizadas</h3>
+                <table>
+                    <tr>
+                        <th>Tag</th>
+                        <th>Onde</th>
+                        <th>Significado</th>
+                    </tr>
+                    <tr>
+                        <td><code>impulsis_ativo</code></td>
+                        <td>Ticket original</td>
+                        <td>Disparo realizado, sessão encerrada</td>
+                    </tr>
+                    <tr>
+                        <td><code>sessao_encerrada_agente</code></td>
+                        <td>Ticket original</td>
+                        <td>Sessão WhatsApp encerrada</td>
+                    </tr>
+                    <tr>
+                        <td><code>impulsis_novo_contato</code></td>
+                        <td>Ticket novo</td>
+                        <td>Semáforo: cliente respondeu</td>
+                    </tr>
+                    <tr>
+                        <td><code>roteado_agente_automatico</code></td>
+                        <td>Ticket novo</td>
+                        <td>Trava anti-reprocessamento</td>
+                    </tr>
+                    <tr>
+                        <td><code>impulsis_encerrar_origem</code></td>
+                        <td>Ticket novo</td>
+                        <td>Gatilho para fechar ticket original</td>
+                    </tr>
+                </table>
+            </section>
+
+            <section id="instalacao">
+                <h2>⚙️ Instalação</h2>
+                
+                <div class="card warning">
+                    <h3>⚠️ Pré-requisitos</h3>
+                    <ul>
+                        <li>Zendesk com acesso Admin</li>
+                        <li>N8N self-hosted (com endpoint acessível pelo Zendesk)</li>
+                        <li>Sunshine Conversations configurado (WhatsApp)</li>
+                        <li>Impulsis configurado para disparos ativos</li>
+                        <li>Bot IA-Follow configurado</li>
+                    </ul>
+                </div>
+
+                <h3>Passo 1: Clone o Repositório</h3>
+                <pre><code>git clone https://github.com/BrusCode/impulsis-zendesk-n8n.git
+cd impulsis-zendesk-n8n</code></pre>
+
+                <h3>Passo 2: Crie Campos Customizados no Zendesk</h3>
+                <ol>
+                    <li>Admin Center → Objects and Rules → Tickets → Fields</li>
+                    <li>Crie os 4 campos conforme tabela acima</li>
+                    <li>Anote os IDs gerados (se diferentes, ajuste nos workflows)</li>
+                </ol>
+
+                <h3>Passo 3: Configure Credenciais no N8N</h3>
+                <ol>
+                    <li>Acesse N8N → Credentials → Add Credential → HTTP Basic Auth</li>
+                    <li>Nome: <code>Zendesk Basic Auth</code></li>
+                    <li>User: <code>seu-email@dominio.com/token</code></li>
+                    <li>Password: <code>SEU_TOKEN_API_ZENDESK</code></li>
+                    <li>Salve</li>
+                </ol>
+            </section>
+
+            <section id="workflows">
+                <h2>🔄 Workflows N8N</h2>
+                
+                <h3>Workflow 1 - Roteamento Seguro v3</h3>
+                <div class="card">
+                    <h4>Funcionalidade</h4>
+                    <p>Roteia o novo ticket criado pela resposta do cliente para o agente que enviou a mensagem ativa.</p>
+                    
+                    <h4>Fluxo</h4>
+                    <ol>
+                        <li>Recebe webhook do Zendesk (novo ticket com tag <code>impulsis_novo_contato</code>)</li>
+                        <li>Busca ticket original com <code>impulsis_ativo</code></li>
+                        <li><strong>NOVO v3:</strong> Busca comentários do ticket original (<code>sort_order=desc</code>)</li>
+                        <li><strong>NOVO v3:</strong> Filtra comentário privado do Impulsis (pattern: "Nome do Template:" + "Destinatario:")</li>
+                        <li><strong>NOVO v3:</strong> Extrai <code>author_id</code> do comentário como agente responsável</li>
+                        <li><strong>NOVO v3:</strong> Fallback: usa assignee original se comentário não encontrado</li>
+                        <li>Valida duplicidade (já existe outro ticket filho ativo?)</li>
+                        <li>Busca dados completos do agente</li>
+                        <li>Atualiza ticket novo: assignee, status=open, tags, campos customizados, nota privada</li>
+                        <li>Adiciona nota no ticket original vinculando filho</li>
+                    </ol>
+
+                    <h4>Importação</h4>
+                    <pre><code>1. N8N → Workflows → Import from clipboard
+2. Cole o conteúdo de workflows/workflow1-roteamento.json
+3. Substitua ZENDESK_BASIC_AUTH pela sua credencial
+4. Ajuste endpoint webhook se necessário
+5. Salve e ative</code></pre>
+                </div>
+
+                <h3>Workflow 2 - Encerramento</h3>
+                <div class="card">
+                    <h4>Funcionalidade</h4>
+                    <p>Fecha o ticket original quando o agente finaliza o atendimento no ticket novo.</p>
+                    
+                    <h4>Fluxo</h4>
+                    <ol>
+                        <li>Recebe webhook do Zendesk (ticket novo com tag <code>impulsis_encerrar_origem</code>)</li>
+                        <li>Busca ticket original pelo campo <code>ID Ticket Pai</code></li>
+                        <li>Atualiza ticket original: status=solved, limpa <code>Retorno Ativo</code>, remove <code>impulsis_ativo</code></li>
+                        <li>Adiciona nota privada de encerramento</li>
+                    </ol>
+
+                    <h4>Importação</h4>
+                    <pre><code>1. N8N → Workflows → Import from clipboard
+2. Cole o conteúdo de workflows/workflow2-encerramento.json
+3. Substitua ZENDESK_BASIC_AUTH pela sua credencial
+4. Ajuste endpoint webhook se necessário
+5. Salve e ative</code></pre>
+                </div>
+
+                <div class="card info">
+                    <h3>📝 Endpoint de Exemplo</h3>
+                    <p><strong>Workflow 1:</strong> <code>https://seu-n8n.com/webhook/impulsis-retorno-routing-v3</code></p>
+                    <p><strong>Workflow 2:</strong> <code>https://seu-n8n.com/webhook/impulsis-encerramento</code></p>
+                </div>
+            </section>
+
+            <section id="configuracao">
+                <h2>🔧 Configuração Zendesk</h2>
+                
+                <h3>Trigger 1 - Roteamento (Tag impulsis_novo_contato)</h3>
+                <div class="card">
+                    <h4>Condições</h4>
+                    <ul>
+                        <li>Ticket: Is | Created</li>
+                        <li>Tags: Contains at least one | <code>impulsis_novo_contato</code></li>
+                        <li>Tags: Contains none | <code>roteado_agente_automatico</code></li>
+                    </ul>
+                    
+                    <h4>Ações</h4>
+                    <ul>
+                        <li>Notify Webhook: <code>https://seu-n8n.com/webhook/impulsis-retorno-routing-v3</code></li>
+                        <li>Método: POST</li>
+                        <li>Content Type: JSON</li>
+                        <li>Body:
+<pre><code>{
+  "ticket_id": {{ticket.id}},
+  "requester_id": {{ticket.requester.id}},
+  "status": "{{ticket.status}}",
+  "tags": {{ticket.tags}}
+}</code></pre>
+                        </li>
+                    </ul>
+                </div>
+
+                <h3>Trigger 2 - Encerramento (Tag impulsis_encerrar_origem)</h3>
+                <div class="card">
+                    <h4>Condições</h4>
+                    <ul>
+                        <li>Ticket: Is | Updated</li>
+                        <li>Tags: Contains at least one | <code>impulsis_encerrar_origem</code></li>
+                    </ul>
+                    
+                    <h4>Ações</h4>
+                    <ul>
+                        <li>Notify Webhook: <code>https://seu-n8n.com/webhook/impulsis-encerramento</code></li>
+                        <li>Método: POST</li>
+                        <li>Content Type: JSON</li>
+                        <li>Body:
+<pre><code>{
+  "new_ticket_id": {{ticket.id}},
+  "origin_ticket_id": "{{ticket.ticket_field_41306351713940}}"
+}</code></pre>
+                        </li>
+                    </ul>
+                </div>
+
+                <h3>Configuração IA-Follow (Welcome Reply)</h3>
+                <div class="card">
+                    <p><strong>Validação de Retorno Ativo:</strong></p>
+                    <ol>
+                        <li>No construtor de diálogo do IA-Follow, adicione validação no Welcome Reply</li>
+                        <li>Condicional: Se ticket tem campo <code>Retorno Ativo</code> (50639967936148) = true</li>
+                        <li>Ação: Adicionar tag <code>impulsis_novo_contato</code></li>
+                        <li>Ação: NÃO enviar mensagem automática (pular Welcome)</li>
+                    </ol>
+                </div>
+
+                <h3>Macro de Encerramento</h3>
+                <div class="card">
+                    <h4>Nome:</h4>
+                    <p>Encerrar Sessão Impulsis</p>
+                    
+                    <h4>Ações:</h4>
+                    <ul>
+                        <li>Status: Solved</li>
+                        <li>Tags: Add <code>impulsis_encerrar_origem</code></li>
+                        <li>Nota privada: "Encerrando sessão Impulsis. Ticket original será fechado automaticamente."</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="testes">
+                <h2>🧪 Testes</h2>
+                
+                <h3>Checklist de Validação</h3>
+                <div class="card success">
+                    <ol>
+                        <li>✅ Campos customizados criados no Zendesk</li>
+                        <li>✅ Credenciais configuradas no N8N</li>
+                        <li>✅ Workflows 1 e 2 importados e ativos</li>
+                        <li>✅ Triggers criados no Zendesk</li>
+                        <li>✅ IA-Follow configurado com validação de Retorno Ativo</li>
+                        <li>✅ Macro de encerramento criada</li>
+                    </ol>
+                </div>
+
+                <h3>Teste Ponta a Ponta</h3>
+                <ol>
+                    <li><strong>Disparo:</strong> Agente envia mensagem ativa via Impulsis</li>
+                    <li><strong>Validar:</strong> Ticket original recebe tag <code>impulsis_ativo</code> e campo <code>Retorno Ativo</code> marcado</li>
+                    <li><strong>Validar:</strong> Comentário privado do Impulsis criado com dados do template</li>
+                    <li><strong>Cliente:</strong> Responde à mensagem no WhatsApp</li>
+                    <li><strong>Validar:</strong> Novo ticket criado, IA-Follow adiciona tag <code>impulsis_novo_contato</code></li>
+                    <li><strong>Validar:</strong> Workflow 1 executa, busca comentário, identifica agente correto</li>
+                    <li><strong>Validar:</strong> Ticket novo roteado para agente que enviou (não o assignee original se diferente)</li>
+                    <li><strong>Validar:</strong> Campo <code>ID Ticket Pai</code> preenchido no ticket novo</li>
+                    <li><strong>Validar:</strong> Tags <code>impulsis_retorno</code> e <code>roteado_agente_automatico</code> adicionadas</li>
+                    <li><strong>Agente:</strong> Finaliza atendimento e aplica macro "Encerrar Sessão Impulsis"</li>
+                    <li><strong>Validar:</strong> Workflow 2 executa</li>
+                    <li><strong>Validar:</strong> Ticket original fechado, campo <code>Retorno Ativo</code> limpo, tag <code>impulsis_ativo</code> removida</li>
+                </ol>
+
+                <h3>Troubleshooting</h3>
+                <div class="card warning">
+                    <h4>Ticket novo não roteado automaticamente</h4>
+                    <ul>
+                        <li>Verificar se tag <code>impulsis_novo_contato</code> foi adicionada pelo IA-Follow</li>
+                        <li>Verificar trigger no Zendesk (condições e webhook)</li>
+                        <li>Verificar logs de execução do Workflow 1 no N8N</li>
+                        <li>Verificar se comentário privado do Impulsis existe no ticket original</li>
+                    </ul>
+
+                    <h4>Agente errado atribuído</h4>
+                    <ul>
+                        <li>Verificar se comentário do Impulsis contém "Nome do Template:" e "Destinatario:"</li>
+                        <li>Verificar logs do nó "Extrair Agente Disparador do Impulsis" no Workflow 1</li>
+                        <li>Se fallback está sendo usado, significa que comentário não foi encontrado</li>
+                    </ul>
+
+                    <h4>Ticket original não fecha</h4>
+                    <ul>
+                        <li>Verificar se macro adicionou tag <code>impulsis_encerrar_origem</code></li>
+                        <li>Verificar se campo <code>ID Ticket Pai</code> está preenchido no ticket novo</li>
+                        <li>Verificar logs de execução do Workflow 2 no N8N</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section>
+                <h2>📚 Documentação Adicional</h2>
+                <div class="card info">
+                    <p>Para detalhes técnicos completos, consulte os arquivos na pasta <code>/docs</code> do repositório:</p>
+                    <ul>
+                        <li><code>01-arquitetura-e-logica.md</code> - Arquitetura detalhada e diagramas</li>
+                        <li><code>02-configuracao-zendesk.md</code> - Configuração completa de triggers e webhooks</li>
+                        <li><code>03-ia-follow-welcome.md</code> - Documentação do bot IA-Follow</li>
+                        <li><code>04-macro-encerramento.md</code> - Detalhes da macro de encerramento</li>
+                        <li><code>05-testes-e-troubleshooting.md</code> - Testes e resolução de problemas</li>
+                        <li><code>06-checklist-implantacao.md</code> - Checklist completo de implantação</li>
+                    </ul>
+                </div>
+
+                <div style="text-align: center; margin-top: 40px;">
+                    <a href="https://github.com/BrusCode/impulsis-zendesk-n8n" class="btn">📖 Ver Repositório Completo</a>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <p><strong>Impulsis + Zendesk + N8N</strong> | Versão 3.0 | Desenvolvido por BrusCode</p>
+            <p style="margin-top: 10px; opacity: 0.8;">© 2026 - Documentação Técnica WebPosto</p>
+        </footer>
+    </div>
+</body>
+</html>
