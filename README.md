@@ -62,3 +62,15 @@ impulsis-zendesk-n8n/
 | v1.0 | 2026-06-24 | Criacao inicial — fluxo completo validado |
 
 > Mantido por BrusCode / WebPosto
+| v2.0 | 2026-06-24 | Workflow 2 de encerramento + macro + limpeza de campos |
+| v3.0 | 2026-06-25 | **Assignee via comentário Impulsis** - Identifica agente que enviou mensagem ativa via author_id do comentário privado (fallback: assignee original) |
+
+> **Novidade v3.0:** O Workflow 1 agora busca comentários privados do Impulsis no ticket original para identificar o agente que realmente enviou a mensagem ativa (`author_id`), resolvendo casos onde o agente que dispara é diferente do assignee do ticket original.
+
+## Tutorial Completo
+
+Para instruções detalhadas de implementação, acesse o [Tutorial HTML](tutorial.html) que contém:
+- Guia passo a passo de instalação
+- Explicação detalhada dos workflows v3.0
+- Configuração completa do Zendesk e N8N
+- Checklist de validação e troubleshooting
