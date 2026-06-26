@@ -1,5 +1,4 @@
 {
-  "name": "Impulsis - Roteamento Seguro v3",
   "nodes": [
     {
       "parameters": {
@@ -8,11 +7,14 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "3eadaa35-4601-465b-af51-2b1dbd5b003c",
+      "id": "383d8893-b67f-4dcd-9d89-052502649ad7",
       "name": "Webhook Novo Contato",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-2480, 160],
+      "position": [
+        -2416,
+        128
+      ],
       "webhookId": "939e4e61-1fbf-47de-b900-2cc7b52ca69b"
     },
     {
@@ -21,11 +23,14 @@
         "responseBody": "={{ { \"status\": \"ok\", \"ticket\": $json.body.ticket_id } }}",
         "options": {}
       },
-      "id": "26bd0aeb-2a7a-4c3b-b0e6-5bf996095f60",
+      "id": "f2c39203-e863-4629-964d-0799802dd39d",
       "name": "Resposta 200",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [-2256, -16]
+      "position": [
+        -2192,
+        -48
+      ]
     },
     {
       "parameters": {
@@ -39,30 +44,45 @@
               "name": "query",
               "value": "=type:ticket requester:{{ $json.body.requester_id }} tags:impulsis_ativo status<solved"
             },
-            {"name": "sort_by", "value": "updated_at"},
-            {"name": "sort_order", "value": "desc"}
+            {
+              "name": "sort_by",
+              "value": "updated_at"
+            },
+            {
+              "name": "sort_order",
+              "value": "desc"
+            }
           ]
         },
         "options": {}
       },
-      "id": "54b406a9-be01-4d68-88c2-e2fcae9ca87e",
+      "id": "c26d7cc4-3f62-4c27-89f3-1314cc82a1d5",
       "name": "Buscar Ticket Original",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-2256, 160],
+      "position": [
+        -2192,
+        128
+      ],
       "credentials": {
-        "httpHeaderAuth": {"id": "3csoYCJVQsP9ffsq", "name": "Zendesk API Header"}
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
       }
     },
     {
       "parameters": {
-        "jsCode": "const results = $input.first().json.results || [];\nconst wh = $('Webhook Novo Contato').first().json;\nconst origin = results.find(t =>\n  Array.isArray(t.tags) &&\n  t.tags.includes('impulsis_ativo') &&\n  ['open','pending','hold'].includes(t.status)\n);\nif (!origin) {\n  return [{ json: { found: false, reason: 'origin_not_found', new_ticket_id: wh.body.ticket_id, requester_id: wh.body.requester_id } }];\n}\nreturn [{ json: {\n  found: true,\n  new_ticket_id: wh.body.ticket_id,\n  requester_id: wh.body.requester_id,\n  origin_ticket_id: origin.id,\n  origin_subject: origin.subject,\n  assignee_id_fallback: origin.assignee_id\n} }];"
+        "jsCode": "const results = $input.first().json.results || [];\nconst wh = $('Webhook Novo Contato').first().json;\n\nconst origin = results.find(t =>\n  Array.isArray(t.tags) &&\n  t.tags.includes('impulsis_ativo') &&\n  ['open','pending','hold'].includes(t.status)\n);\n\nif (!origin) {\n  return [{ json: {\n    found: false,\n    reason: 'origin_not_found',\n    new_ticket_id: wh.body.ticket_id,\n    requester_id: wh.body.requester_id\n  } }];\n}\n\nreturn [{ json: {\n  found: true,\n  new_ticket_id: wh.body.ticket_id,\n  requester_id: wh.body.requester_id,\n  origin_ticket_id: origin.id,\n  origin_subject: origin.subject,\n  origin_group_id: origin.group_id,\n  assignee_id_fallback: origin.assignee_id\n} }];"
       },
-      "id": "90ec31bd-c596-45e9-a661-542e2818e97a",
+      "id": "d54d78c6-900e-4719-a380-0b1261e2f304",
       "name": "Extrair Ticket Original",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2032, 160]
+      "position": [
+        -1968,
+        128
+      ]
     },
     {
       "parameters": {
@@ -78,18 +98,24 @@
               "id": "cond-found",
               "leftValue": "={{ $json.found }}",
               "rightValue": true,
-              "operator": {"type": "boolean", "operation": "true"}
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
             }
           ],
           "combinator": "and"
         },
         "options": {}
       },
-      "id": "28df2975-9360-4dce-8653-5b2a723be799",
+      "id": "00d5e34f-2431-479b-b7ee-711864dbab9a",
       "name": "Origem Encontrada",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [-1840, 160]
+      "position": [
+        -1776,
+        128
+      ]
     },
     {
       "parameters": {
@@ -99,29 +125,41 @@
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            {"name": "sort_order", "value": "desc"}
+            {
+              "name": "sort_order",
+              "value": "desc"
+            }
           ]
         },
         "options": {}
       },
-      "id": "2d6deecb-700e-47d6-94ff-4881e8d523e7",
+      "id": "1c606cc5-d364-4166-9328-f4bf3a86ab15",
       "name": "Buscar Comentarios do Ticket Original",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-1616, 64],
+      "position": [
+        -1552,
+        32
+      ],
       "credentials": {
-        "httpHeaderAuth": {"id": "3csoYCJVQsP9ffsq", "name": "Zendesk API Header"}
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
       }
     },
     {
       "parameters": {
-        "jsCode": "const ctx = $('Extrair Ticket Original').first().json;\nconst comments = $input.first().json.comments || [];\n\nconst impulsis_comment = comments.find(c =>\n  c.public === false &&\n  c.body &&\n  c.body.includes('Nome do Template:') &&\n  c.body.includes('Destinatario:')\n);\n\nlet sender_agent_id = null;\nlet sender_source = 'nao_encontrado';\n\nif (impulsis_comment) {\n  sender_agent_id = impulsis_comment.author_id;\n  sender_source = 'comentario_impulsis';\n}\n\nconst assignee_id_final = sender_agent_id || ctx.assignee_id_fallback;\nconst using_fallback = !sender_agent_id;\n\nreturn [{ json: {\n  found: ctx.found,\n  new_ticket_id: ctx.new_ticket_id,\n  requester_id: ctx.requester_id,\n  origin_ticket_id: ctx.origin_ticket_id,\n  origin_subject: ctx.origin_subject,\n  assignee_id_final: assignee_id_final,\n  assignee_id_fallback: ctx.assignee_id_fallback,\n  sender_agent_id: sender_agent_id,\n  sender_source: sender_source,\n  using_fallback: using_fallback\n} }];"
+        "jsCode": "const ctx = $('Extrair Ticket Original').first().json;\nconst comments = $input.first().json.comments || [];\n\nconst impulsis_comment = [...comments].reverse().find(c =>\n  c.public === false &&\n  c.body &&\n  c.body.includes('Nome do Template:') &&\n  c.body.includes('Destinatario:')\n);\n\nlet sender_agent_id = null;\nlet sender_source = 'nao_encontrado';\n\nif (impulsis_comment) {\n  sender_agent_id = impulsis_comment.author_id;\n  sender_source = 'comentario_impulsis_mais_recente';\n}\n\nconst assignee_id_final = sender_agent_id || ctx.assignee_id_fallback;\nconst using_fallback = !sender_agent_id;\n\nreturn [{ json: {\n  found: ctx.found,\n  new_ticket_id: ctx.new_ticket_id,\n  requester_id: ctx.requester_id,\n  origin_ticket_id: ctx.origin_ticket_id,\n  origin_subject: ctx.origin_subject,\n  origin_group_id: ctx.origin_group_id,\n  assignee_id_final,\n  assignee_id_fallback: ctx.assignee_id_fallback,\n  sender_agent_id,\n  sender_source,\n  using_fallback\n} }];"
       },
-      "id": "26212bf3-6b5e-4b52-82c5-ce23406c694d",
+      "id": "dabc3fff-49da-4683-9d29-e66f5320ecd3",
       "name": "Extrair Agente Disparador do Impulsis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1392, 64]
+      "position": [
+        -1328,
+        32
+      ]
     },
     {
       "parameters": {
@@ -135,30 +173,45 @@
               "name": "query",
               "value": "=type:ticket requester:{{ $json.requester_id }} tags:impulsis_retorno status<solved"
             },
-            {"name": "sort_by", "value": "updated_at"},
-            {"name": "sort_order", "value": "desc"}
+            {
+              "name": "sort_by",
+              "value": "updated_at"
+            },
+            {
+              "name": "sort_order",
+              "value": "desc"
+            }
           ]
         },
         "options": {}
       },
-      "id": "d62913e9-1d00-4f0b-bd93-3bfd0846df71",
+      "id": "9997d7a9-4f08-417c-896d-759e9a97040c",
       "name": "Buscar Filho Ativo Existente",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-1168, 64],
+      "position": [
+        -1104,
+        32
+      ],
       "credentials": {
-        "httpHeaderAuth": {"id": "3csoYCJVQsP9ffsq", "name": "Zendesk API Header"}
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
       }
     },
     {
       "parameters": {
-        "jsCode": "const ctx = $('Extrair Agente Disparador do Impulsis').first().json;\nconst results = $input.first().json.results || [];\nconst duplicate = results.find(t =>\n  String(t.id) !== String(ctx.new_ticket_id) &&\n  ['open','pending','hold'].includes(t.status)\n);\nreturn [{ json: {\n  found: ctx.found,\n  new_ticket_id: ctx.new_ticket_id,\n  requester_id: ctx.requester_id,\n  origin_ticket_id: ctx.origin_ticket_id,\n  origin_subject: ctx.origin_subject,\n  assignee_id_final: ctx.assignee_id_final,\n  assignee_id_fallback: ctx.assignee_id_fallback,\n  sender_agent_id: ctx.sender_agent_id,\n  sender_source: ctx.sender_source,\n  using_fallback: ctx.using_fallback,\n  duplicate_child_found: !!duplicate,\n  duplicate_child_id: duplicate ? duplicate.id : null\n} }];"
+        "jsCode": "const ctx = $('Extrair Agente Disparador do Impulsis').first().json;\nconst results = $input.first().json.results || [];\n\nconst duplicate = results.find(t =>\n  String(t.id) !== String(ctx.new_ticket_id) &&\n  ['open','pending','hold'].includes(t.status)\n);\n\nreturn [{ json: {\n  found: ctx.found,\n  new_ticket_id: ctx.new_ticket_id,\n  requester_id: ctx.requester_id,\n  origin_ticket_id: ctx.origin_ticket_id,\n  origin_subject: ctx.origin_subject,\n  origin_group_id: ctx.origin_group_id,\n  assignee_id_final: ctx.assignee_id_final,\n  assignee_id_fallback: ctx.assignee_id_fallback,\n  sender_agent_id: ctx.sender_agent_id,\n  sender_source: ctx.sender_source,\n  using_fallback: ctx.using_fallback,\n  duplicate_child_found: !!duplicate,\n  duplicate_child_id: duplicate ? duplicate.id : null\n} }];"
       },
-      "id": "76eebb1a-5321-4bda-86da-74b011b72264",
+      "id": "131f977a-7b41-4dcb-817f-a34cc2402e2d",
       "name": "Validar Duplicidade de Filho",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-960, 64]
+      "position": [
+        -896,
+        32
+      ]
     },
     {
       "parameters": {
@@ -174,18 +227,24 @@
               "id": "cond-dup",
               "leftValue": "={{ $json.duplicate_child_found }}",
               "rightValue": false,
-              "operator": {"type": "boolean", "operation": "false"}
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
             }
           ],
           "combinator": "and"
         },
         "options": {}
       },
-      "id": "c3e0bc28-1406-4560-ba8e-bb0a518f3ae6",
+      "id": "44eeb445-b14f-489e-b2ca-750cf92f94d9",
       "name": "Ja Existe Filho Ativo",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [-736, 64]
+      "position": [
+        -672,
+        32
+      ]
     },
     {
       "parameters": {
@@ -194,24 +253,33 @@
         "genericAuthType": "httpHeaderAuth",
         "options": {}
       },
-      "id": "d3a6ef2d-924e-4290-8f2b-c41212ea2a90",
+      "id": "cc9d1ac7-a4b9-4f06-a514-6364c259db05",
       "name": "Buscar Dados do Agente",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-512, -48],
+      "position": [
+        -432,
+        -80
+      ],
       "credentials": {
-        "httpHeaderAuth": {"id": "3csoYCJVQsP9ffsq", "name": "Zendesk API Header"}
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
       }
     },
     {
       "parameters": {
-        "jsCode": "const agent = $input.first().json.user;\nconst ctx = $('Validar Duplicidade de Filho').first().json;\n\nconst fonte = ctx.using_fallback\n  ? 'assignee do ticket original (fallback - comentario Impulsis nao localizado)'\n  : 'comentario privado do Impulsis';\n\nconst nota = [\n  'Retorno Impulsis roteado automaticamente.',\n  '',\n  'Ticket de origem: #' + ctx.origin_ticket_id + ' (' + ctx.origin_subject + ')',\n  'Agente responsavel: ' + agent.name + ' (' + agent.email + ')',\n  'Origem do assignee: ' + fonte,\n  '',\n  'O ticket de origem permanece aberto e sera encerrado automaticamente apos o fechamento deste ticket.'\n].join('\\n');\n\nreturn [{ json: {\n  new_ticket_id: ctx.new_ticket_id,\n  origin_ticket_id: ctx.origin_ticket_id,\n  origin_subject: ctx.origin_subject,\n  assignee_id_final: ctx.assignee_id_final,\n  agent_name: agent.name,\n  agent_email: agent.email,\n  nota_interna: nota,\n  usando_fallback: ctx.using_fallback,\n  sender_source: ctx.sender_source\n} }];"
+        "jsCode": "const agentResponse = $('Buscar Dados do Agente').first().json;\nconst groupMembershipResponse = $('Buscar Grupos do Agente').first().json;\nconst ctx = $('Validar Duplicidade de Filho').first().json;\n\nconst agent = agentResponse.user || {};\nconst memberships = groupMembershipResponse.group_memberships || [];\n\nconst isZendeskAgent = ['agent', 'admin'].includes(agent.role);\nconst activeMemberships = memberships.filter(m => !m.deleted);\n\n// Preferir o grupo padrão do próprio usuário Zendesk, quando ele também aparece nas memberships.\n// Isso evita cair no grupo do ticket original e respeita o grupo operacional do agente.\nconst agentDefaultGroupId = agent.default_group_id || null;\nconst membershipFromUserDefault = agentDefaultGroupId\n  ? activeMemberships.find(m => String(m.group_id) === String(agentDefaultGroupId))\n  : null;\n\nconst defaultMembership = activeMemberships.find(m => m.default === true);\nconst selectedMembership = membershipFromUserDefault || defaultMembership || activeMemberships[0] || null;\nconst group_id_final = selectedMembership ? selectedMembership.group_id : null;\n\nlet routing_error = null;\nif (!ctx.assignee_id_final) {\n  routing_error = 'assignee_id_final_missing';\n} else if (!agent.id) {\n  routing_error = 'agent_not_found';\n} else if (!isZendeskAgent) {\n  routing_error = 'user_is_not_agent_or_admin';\n} else if (!group_id_final) {\n  routing_error = 'agent_has_no_active_group_membership';\n}\n\nconst can_route_to_agent = !routing_error;\n\nconst fonte = ctx.using_fallback\n  ? 'assignee do ticket original (fallback - comentario Impulsis nao localizado)'\n  : 'comentario privado mais recente do Impulsis';\n\nconst nota = [\n  'Retorno Impulsis roteado automaticamente.',\n  '',\n  'Ticket de origem: #' + ctx.origin_ticket_id + ' (' + ctx.origin_subject + ')',\n  'Grupo original do ticket de origem: ' + (ctx.origin_group_id || 'nao informado'),\n  'Agente responsavel pelo novo ticket: ' + (agent.name || 'nao identificado') + ' (' + (agent.email || 'sem email') + ')',\n  'Grupo padrao do agente: ' + (agentDefaultGroupId || 'nao informado'),\n  'Grupo selecionado para roteamento: ' + (group_id_final || 'nao encontrado'),\n  'Origem do assignee: ' + fonte,\n  '',\n  'O ticket de origem permanece aberto e sera encerrado automaticamente apos o fechamento deste ticket.'\n].join('\\n');\n\nconst erro = [\n  'Falha no roteamento automatico do retorno Impulsis.',\n  '',\n  'Motivo: ' + (routing_error || 'sem erro'),\n  'Ticket de origem: #' + ctx.origin_ticket_id,\n  'Agente pretendido: ' + (ctx.assignee_id_final || 'nao informado'),\n  'Grupo padrao do agente: ' + (agentDefaultGroupId || 'nao informado'),\n  'Grupo original do ticket de origem: ' + (ctx.origin_group_id || 'nao informado'),\n  '',\n  'Este workflow nao enviou o ticket para o grupo original para evitar redistribuicao automatica para agente incorreto.',\n  'Ajuste o grupo do agente ou revise a regra de roteamento antes de reprocessar.'\n].join('\\n');\n\nreturn [{ json: {\n  new_ticket_id: ctx.new_ticket_id,\n  origin_ticket_id: ctx.origin_ticket_id,\n  origin_subject: ctx.origin_subject,\n  origin_group_id: ctx.origin_group_id,\n  assignee_id_final: ctx.assignee_id_final,\n  group_id_final,\n  agent_default_group_id: agentDefaultGroupId,\n  agent_name: agent.name,\n  agent_email: agent.email,\n  agent_role: agent.role,\n  group_membership_id_final: selectedMembership ? selectedMembership.id : null,\n  nota_interna: nota,\n  nota_erro_roteamento: erro,\n  usando_fallback: ctx.using_fallback,\n  sender_source: ctx.sender_source,\n  can_route_to_agent,\n  routing_error\n} }];"
       },
-      "id": "5947f4d1-cf83-411d-bb5e-3d4b753ae73c",
+      "id": "49808523-fa29-4c3d-83e6-c76c17065217",
       "name": "Preparar Payload de Atualizacao",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-288, -48]
+      "position": [
+        -208,
+        -80
+      ]
     },
     {
       "parameters": {
@@ -220,17 +288,23 @@
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
-        "contentType": "json",
-        "body": "={{ JSON.stringify({ ticket: { assignee_id: $json.assignee_id_final, status: 'open', tags: ['impulsis_retorno','roteado_agente_automatico'], custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) }, { id: 41270897374356, value: true } ], comment: { body: $json.nota_interna, public: false } } }) }}",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket: { group_id: $json.group_id_final, assignee_id: $json.assignee_id_final, status: 'open', additional_tags: ['impulsis_retorno','roteado_agente_automatico'], custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) }, { id: 41270897374356, value: true } ], comment: { body: $json.nota_interna, public: false } } }) }}",
         "options": {}
       },
-      "id": "10cb10f9-e4d5-4be3-8b8d-6c5bfd540227",
+      "id": "3a887415-6ca4-4500-a57e-ad487ad3198e",
       "name": "Atualizar Ticket Novo com Agente",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-48, -48],
+      "position": [
+        240,
+        -128
+      ],
       "credentials": {
-        "httpHeaderAuth": {"id": "3csoYCJVQsP9ffsq", "name": "Zendesk API Header"}
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
       }
     },
     {
@@ -240,85 +314,313 @@
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
-        "contentType": "json",
-        "body": "={{ JSON.stringify({ ticket: { custom_fields: [ { id: 41270881369364, value: true } ], comment: { body: 'Ticket filho #' + $('Preparar Payload de Atualizacao').first().json.new_ticket_id + ' vinculado. Agente responsavel: ' + $('Preparar Payload de Atualizacao').first().json.agent_name, public: false } } }) }}",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket: { custom_fields: [ { id: 41270881369364, value: true } ], comment: { body: 'Ticket filho #' + $('Preparar Payload de Atualizacao').first().json.new_ticket_id + ' vinculado. Agente responsavel: ' + $('Preparar Payload de Atualizacao').first().json.agent_name + ' | Grupo aplicado: ' + $('Preparar Payload de Atualizacao').first().json.group_id_final + ' | Origem assignee: ' + $('Preparar Payload de Atualizacao').first().json.sender_source, public: false } } }) }}",
         "options": {}
       },
-      "id": "302237b6-8419-4127-b48b-e9193dacd575",
+      "id": "9cbda895-8b94-4f33-86e0-b690cc4aa4b6",
       "name": "Nota no Ticket Original",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [176, -48],
+      "position": [
+        464,
+        -128
+      ],
       "credentials": {
-        "httpHeaderAuth": {"id": "3csoYCJVQsP9ffsq", "name": "Zendesk API Header"}
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
       }
     },
     {
       "parameters": {
         "jsCode": "return [{ json: { status: 'skipped_duplicate', origin_ticket_id: $json.origin_ticket_id, duplicate_child_id: $json.duplicate_child_id, new_ticket_id: $json.new_ticket_id } }];"
       },
-      "id": "c8ddbc6d-7c5b-494c-b584-13bdf53dc2e9",
+      "id": "78afa2cd-21f4-4d82-8362-b6d1db3ab26a",
       "name": "Log Filho Duplicado",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-512, 208]
+      "position": [
+        -448,
+        176
+      ]
     },
     {
       "parameters": {
         "jsCode": "return [{ json: { status: 'origin_not_found', payload: $input.first().json } }];"
       },
-      "id": "c1aa58e5-8d94-498b-9a65-7b4600caa0a8",
+      "id": "2efd52eb-b574-420e-8185-86a8e73028bb",
       "name": "Log Sem Origem",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1616, 304]
+      "position": [
+        -1552,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://webposto.zendesk.com/api/v2/users/' + (($json.user && $json.user.id) || $('Validar Duplicidade de Filho').first().json.assignee_id_final) + '/group_memberships.json' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "8bfb385a-0717-4b6c-9bc1-51c806a35a13",
+      "name": "Buscar Grupos do Agente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -112,
+        -80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7a5f3ce8-8d4c-464c-8a18-096a9f25a8cc",
+              "leftValue": "={{ $json.can_route_to_agent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c6e9c768-c57d-43a6-bdc9-7b8771a841b9",
+      "name": "Pode Roteiar para Agente",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $json.new_ticket_id }}.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket: { status: 'open', additional_tags: ['impulsis_retorno','erro_roteamento_agente'], custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) } ], comment: { body: $json.nota_erro_roteamento, public: false } } }) }}",
+        "options": {}
+      },
+      "id": "2f1e4e9a-f159-4280-8bff-550a36f71756",
+      "name": "Marcar Erro de Roteamento no Ticket Novo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        112
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
     }
   ],
   "connections": {
     "Webhook Novo Contato": {
-      "main": [[
-        {"node": "Resposta 200", "type": "main", "index": 0},
-        {"node": "Buscar Ticket Original", "type": "main", "index": 0}
-      ]]
+      "main": [
+        [
+          {
+            "node": "Resposta 200",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Buscar Ticket Original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Buscar Ticket Original": {
-      "main": [[{"node": "Extrair Ticket Original", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Extrair Ticket Original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extrair Ticket Original": {
-      "main": [[{"node": "Origem Encontrada", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Origem Encontrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Origem Encontrada": {
       "main": [
-        [{"node": "Buscar Comentarios do Ticket Original", "type": "main", "index": 0}],
-        [{"node": "Log Sem Origem", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Buscar Comentarios do Ticket Original",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Sem Origem",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Buscar Comentarios do Ticket Original": {
-      "main": [[{"node": "Extrair Agente Disparador do Impulsis", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Extrair Agente Disparador do Impulsis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extrair Agente Disparador do Impulsis": {
-      "main": [[{"node": "Buscar Filho Ativo Existente", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Buscar Filho Ativo Existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Buscar Filho Ativo Existente": {
-      "main": [[{"node": "Validar Duplicidade de Filho", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Validar Duplicidade de Filho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Validar Duplicidade de Filho": {
-      "main": [[{"node": "Ja Existe Filho Ativo", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Ja Existe Filho Ativo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Ja Existe Filho Ativo": {
       "main": [
-        [{"node": "Buscar Dados do Agente", "type": "main", "index": 0}],
-        [{"node": "Log Filho Duplicado", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Buscar Dados do Agente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Filho Duplicado",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Buscar Dados do Agente": {
-      "main": [[{"node": "Preparar Payload de Atualizacao", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Buscar Grupos do Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Preparar Payload de Atualizacao": {
-      "main": [[{"node": "Atualizar Ticket Novo com Agente", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Pode Roteiar para Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Atualizar Ticket Novo com Agente": {
-      "main": [[{"node": "Nota no Ticket Original", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Nota no Ticket Original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Grupos do Agente": {
+      "main": [
+        [
+          {
+            "node": "Preparar Payload de Atualizacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pode Roteiar para Agente": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Ticket Novo com Agente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marcar Erro de Roteamento no Ticket Novo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {

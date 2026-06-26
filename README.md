@@ -74,3 +74,24 @@ Para instruções detalhadas de implementação, acesse o [Tutorial HTML](tutori
 - Explicação detalhada dos workflows v3.0
 - Configuração completa do Zendesk e N8N
 - Checklist de validação e troubleshooting
+
+
+## Atualizacao 2026-06-26
+
+Os workflows atuais substituem a primeira versao operacional por uma logica mais segura:
+
+- `workflow1-roteamento.json`: roteamento seguro do novo ticket para o agente que iniciou o contato Impulsis.
+  - Identifica o agente pelo comentario privado mais recente do Impulsis.
+  - Busca os grupos ativos do agente no Zendesk.
+  - Atualiza o novo ticket com `group_id` + `assignee_id`, evitando redistribuicao automatica para outro agente.
+  - Usa `additional_tags`, nao `tags`, para nao sobrescrever tags existentes.
+  - Se nao encontrar agente/grupo valido, marca erro controlado no ticket novo e nao usa o grupo do ticket original como fallback.
+
+- `workflow2-encerramento.json`: encerramento seguro do ticket original.
+  - Valida payload recebido pelo webhook.
+  - Busca o ticket filho antes de fechar a origem.
+  - Fecha a origem apenas se o filho estiver `solved` ou `closed`.
+  - Limpa o campo de controle e remove `impulsis_ativo` com body JSON valido.
+  - Responde ao webhook somente ao final do fluxo.
+
+> O arquivo `tutorial.html` ainda descreve a documentacao inicial e sera revisado em uma etapa posterior.
