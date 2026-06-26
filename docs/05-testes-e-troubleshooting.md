@@ -144,3 +144,37 @@
 5. Clique em cada node para ver input e output exatos
 
 **Dica:** Ative `Save successful executions` nas configuracoes do workflow para ter historico completo.
+
+
+## Erros recentes corrigidos
+
+### `users/[undefined]/group_memberships.json`
+
+Causa: depois do no `Buscar Dados do Agente`, o item atual passa a ser a resposta do Zendesk (`user.id`). O valor `assignee_id_final` nao esta mais diretamente em `$json`.
+
+Correcao aplicada no Workflow 1:
+
+```js
+={{ 'https://webposto.zendesk.com/api/v2/users/' + (($json.user && $json.user.id) || $('Validar Duplicidade de Filho').first().json.assignee_id_final) + '/group_memberships.json' }}
+```
+
+### Tags sobrescritas no update do ticket
+
+Causa: usar `tags` em `PUT /api/v2/tickets/{id}.json` pode substituir tags existentes.
+
+Correcao aplicada:
+
+```js
+additional_tags: ['impulsis_retorno', 'roteado_agente_automatico']
+```
+
+### Workflow 2 fechando origem sem validar filho
+
+Causa: versoes antigas enviavam `PUT`/`DELETE` sem body JSON util e nao confirmavam o status do ticket filho.
+
+Correcao aplicada:
+
+- valida payload do webhook;
+- busca ticket filho;
+- so fecha origem se filho estiver `solved` ou `closed`;
+- envia body JSON no fechamento e na remocao da tag `impulsis_ativo`.

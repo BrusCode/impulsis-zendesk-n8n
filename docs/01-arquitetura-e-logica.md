@@ -66,15 +66,19 @@ O `problem_id` do Zendesk so funciona quando o ticket pai e do tipo `Problem`. N
 6. N8N WORKFLOW 1 executa:
    a. Busca tickets do mesmo requester com tag impulsis_ativo (excluindo o novo)
    b. Verifica se ja existe ticket filho ativo (protecao anti-duplicidade)
-   c. Recupera dados do agente assignee do ticket original
-   d. Atualiza o novo ticket:
-      - assignee_id = agente do ticket original
+   c. Recupera o agente que fez o disparo pelo comentario privado mais recente do Impulsis
+   d. Busca os grupos ativos do agente em `/api/v2/users/{agent_id}/group_memberships.json`
+   e. Calcula `group_id_final`, priorizando `user.default_group_id` quando ele existe nas memberships
+   f. Atualiza o novo ticket:
+      - group_id = grupo confirmado do agente
+      - assignee_id = agente que deve falar com o cliente
       - status = open
-      - tags adiciona: impulsis_retorno, roteado_agente_automatico
+      - additional_tags adiciona: impulsis_retorno, roteado_agente_automatico
       - campo ID Ticket Pai = ID do ticket original
       - campo Ticket Filho = true
       - nota interna com contexto completo
-   e. Atualiza o ticket original:
+   g. Se nao houver agente/grupo valido, marca o novo ticket com `erro_roteamento_agente` e nao usa o grupo original como fallback
+   h. Atualiza o ticket original:
       - campo Ticket Pai = true
       - nota interna confirmando roteamento
 
@@ -95,11 +99,13 @@ O `problem_id` do Zendesk so funciona quando o ticket pai e do tipo `Problem`. N
    Acao: dispara webhook para N8N Workflow 2
 
 10. N8N WORKFLOW 2 executa:
-    a. Valida ID do ticket original
-    b. Fecha ticket original (status = solved)
-    c. Limpa campo Retorno Ativo (false) no ticket original
-    d. Remove tag impulsis_ativo do ticket original
-    e. Adiciona nota de encerramento em ambos os tickets
+    a. Valida `origin_ticket_id`, `child_ticket_id`, `action` e impede `origin_ticket_id == child_ticket_id`
+    b. Busca o ticket filho no Zendesk
+    c. Continua apenas se o filho estiver `solved` ou `closed`
+    d. Fecha ticket original (status = solved)
+    e. Limpa campo Retorno Ativo (false) no ticket original
+    f. Remove tag impulsis_ativo do ticket original
+    g. Adiciona nota interna de encerramento e responde ao webhook ao final
 ```
 
 ---
@@ -129,3 +135,17 @@ Se o cliente enviar duas mensagens rapidamente antes do roteamento ser concluido
 | `roteado_agente_automatico` | Mantida | Auditoria e trava historica |
 | `ID Ticket Pai` (41306351713940) | Mantido | Rastreabilidade historica |
 | `impulsis_retorno` no ticket filho | Mantida | Dado analitico do ciclo |
+
+
+### Roteamento seguro por grupo do agente
+
+O Workflow 1 nao deve atribuir um ticket apenas com `assignee_id`. Para evitar que o Zendesk redistribua o ticket pela regra automatica do grupo original, o fluxo agora busca as memberships do agente e envia `group_id` junto com `assignee_id`.
+
+Regra de selecao do grupo:
+
+1. Usa `user.default_group_id` se esse grupo aparecer nas memberships ativas.
+2. Senao, usa a membership marcada como default.
+3. Senao, usa a primeira membership ativa.
+4. Se nenhuma membership valida existir, o fluxo nao roteia para o grupo original; marca erro controlado no ticket novo.
+
+Essa decisao evita perda de distribuicao para outro agente quando o grupo original tem regra automatica de atribuicao.

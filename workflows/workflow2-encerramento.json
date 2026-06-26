@@ -1,5 +1,4 @@
 {
-  "name": "Impulsis - Encerrar Ticket Origem v2",
   "nodes": [
     {
       "parameters": {
@@ -8,11 +7,14 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "76d5fc18-c451-48db-9fff-82e9bd0d28a4",
+      "id": "b1b2ccd3-70f3-472a-aa76-b1307999ccdd",
       "name": "Webhook Fechar Origem",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-224, -48],
+      "position": [
+        -672,
+        256
+      ],
       "webhookId": "8d39725e-00b1-48ff-aab5-107fef166f03"
     },
     {
@@ -21,21 +23,27 @@
         "responseBody": "={{ { \"status\": \"ok\" } }}",
         "options": {}
       },
-      "id": "9ecf0b9f-97ba-45db-aecf-ae1c586080c7",
-      "name": "Resposta 200",
+      "id": "eb13b921-d8fc-41a6-bfb3-28292604c0b3",
+      "name": "Resposta 200 Antiga - Desconectada",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [-496, -48]
+      "position": [
+        -720,
+        352
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const wh = $input.first().json;\nconst b = wh.body || {};\nreturn [{ json: {\n  action: b.action || '',\n  child_ticket_id: b.child_ticket_id || '',\n  origin_ticket_id: b.origin_ticket_id || '',\n  agent_name: b.agent_name || '',\n  agent_email: b.agent_email || ''\n} }];"
+        "jsCode": "const wh = $input.first().json;\nconst b = wh.body || {};\n\nconst action = String(b.action || '').trim();\nconst child_ticket_id = String(b.child_ticket_id || '').trim();\nconst origin_ticket_id = String(b.origin_ticket_id || '').trim();\n\nconst acceptedActions = ['close_origin', 'child_solved', 'child_closed', ''];\n\nlet validation_error = null;\nif (!acceptedActions.includes(action)) {\n  validation_error = 'invalid_action';\n} else if (!origin_ticket_id || origin_ticket_id === '0') {\n  validation_error = 'invalid_origin_ticket_id';\n} else if (!child_ticket_id || child_ticket_id === '0') {\n  validation_error = 'invalid_child_ticket_id';\n} else if (origin_ticket_id === child_ticket_id) {\n  validation_error = 'origin_and_child_are_same_ticket';\n}\n\nreturn [{ json: {\n  action,\n  child_ticket_id,\n  origin_ticket_id,\n  agent_name: b.agent_name || '',\n  agent_email: b.agent_email || '',\n  payload_valid: !validation_error,\n  validation_error\n} }];"
       },
-      "id": "extrair-body-wf2",
+      "id": "360667e4-f326-4e75-b24a-19227c75c1ac",
       "name": "Extrair Dados do Webhook",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [0, -48]
+      "position": [
+        -448,
+        256
+      ]
     },
     {
       "parameters": {
@@ -44,50 +52,56 @@
             "caseSensitive": true,
             "leftValue": "",
             "typeValidation": "strict",
-            "version": 1
+            "version": 2
           },
           "conditions": [
             {
-              "id": "cond-origin-notempty",
-              "leftValue": "={{ $json.origin_ticket_id }}",
-              "rightValue": "",
-              "operator": {"type": "string", "operation": "notEquals"}
-            },
-            {
-              "id": "cond-origin-nonzero",
-              "leftValue": "={{ $json.origin_ticket_id }}",
-              "rightValue": "0",
-              "operator": {"type": "string", "operation": "notEquals"}
+              "id": "cond-payload-valid",
+              "leftValue": "={{ $json.payload_valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
         },
         "options": {}
       },
-      "id": "8f15919e-d69e-4311-91f1-3bc8bec091cf",
-      "name": "Origem Valida",
+      "id": "19b182d6-ac99-410c-a2a9-c31b2f3f5948",
+      "name": "Payload Valido",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [240, -48]
+      "position": [
+        -224,
+        256
+      ]
     },
     {
       "parameters": {
         "method": "PUT",
-        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $json.origin_ticket_id }}.json",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $('Extrair Dados do Webhook').first().json.origin_ticket_id }}.json",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
-        "contentType": "json",
-        "body": "={{ JSON.stringify({ ticket: { status: 'solved', custom_fields: [ { id: 50639967936148, value: false }, { id: 41270881369364, value: false } ], comment: { body: 'Ticket encerrado automaticamente. Retorno do cliente foi atendido no ticket filho #' + $json.child_ticket_id + ' pelo agente ' + $json.agent_name + '.', public: false } } }) }}",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket: { status: 'solved', additional_tags: ['impulsis_origem_fechada'], custom_fields: [ { id: 50639967936148, value: false }, { id: 41270881369364, value: false } ], comment: { body: 'Ticket de origem fechado automaticamente apos conclusao do ticket filho #' + $('Extrair Dados do Webhook').first().json.child_ticket_id + '. Agente: ' + ($('Extrair Dados do Webhook').first().json.agent_name || 'nao informado') + ' (' + ($('Extrair Dados do Webhook').first().json.agent_email || 'sem email') + ').', public: false } } }) }}",
         "options": {}
       },
-      "id": "d77da91a-1f5c-480f-a1f9-d54cc3f0a5b4",
+      "id": "56ae8658-cfcc-4d8a-8f24-c25dea316971",
       "name": "Fechar Origem e Limpar Campos",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, -64],
+      "position": [
+        896,
+        160
+      ],
       "credentials": {
-        "httpHeaderAuth": {"id": "3csoYCJVQsP9ffsq", "name": "Zendesk API Header"}
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
       }
     },
     {
@@ -97,61 +111,298 @@
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
-        "contentType": "json",
-        "body": "={{ JSON.stringify({ tags: ['impulsis_ativo'] }) }}",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['impulsis_ativo'] }) }}",
         "options": {}
       },
-      "id": "ec637a56-fca8-4b34-acfb-467293236429",
+      "id": "6875423e-5d4e-4a0c-afa0-8458d68a7533",
       "name": "Remover Tag impulsis_ativo",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, -64],
+      "position": [
+        1120,
+        160
+      ],
       "credentials": {
-        "httpHeaderAuth": {"id": "3csoYCJVQsP9ffsq", "name": "Zendesk API Header"}
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
       }
     },
     {
       "parameters": {
-        "jsCode": "const wh = $('Extrair Dados do Webhook').first().json;\nreturn [{ json: {\n  status: 'done',\n  origin_ticket_id: wh.origin_ticket_id,\n  child_ticket_id: wh.child_ticket_id,\n  agent_name: wh.agent_name,\n  cleaned_field: true,\n  removed_tag: true\n} }];"
+        "jsCode": "const wh = $('Extrair Dados do Webhook').first().json;\nconst child = $('Validar Ticket Filho Fechado').first().json;\nreturn [{ json: {\n  status: 'done',\n  origin_ticket_id: wh.origin_ticket_id,\n  child_ticket_id: wh.child_ticket_id,\n  child_status: child.child_status,\n  agent_name: wh.agent_name,\n  cleaned_field: true,\n  removed_tag: true,\n  origin_status_set: 'solved'\n} }];"
       },
-      "id": "5f707037-65f6-466b-8d3b-a3ab03cf451f",
+      "id": "1603bb5c-0275-46e1-81d3-ba18f8eee9eb",
       "name": "Log Sucesso",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [960, -64]
+      "position": [
+        1344,
+        160
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const wh = $('Extrair Dados do Webhook').first().json;\nreturn [{ json: { status: 'skipped', reason: 'invalid_origin_id', payload: wh } }];"
+        "jsCode": "const wh = $('Extrair Dados do Webhook').first().json;\nreturn [{ json: {\n  status: 'skipped',\n  reason: wh.validation_error || 'invalid_payload',\n  payload: wh\n} }];"
       },
-      "id": "dc7eb9ad-cbab-4d9e-a267-2654d9cd81af",
-      "name": "Log Origem Invalida",
+      "id": "489bad43-0a0f-4fdd-9c46-9424eccdce6f",
+      "name": "Log Payload Invalido",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 112]
+      "position": [
+        0,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $json.child_ticket_id }}.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "20d6cc3c-f698-4129-9b3e-ecfa85a12f6b",
+      "name": "Buscar Ticket Filho",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        256
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const wh = $('Extrair Dados do Webhook').first().json;\nconst ticket = $input.first().json.ticket || {};\nconst child_status = ticket.status || '';\nconst child_is_closed = ['solved', 'closed'].includes(child_status);\n\nreturn [{ json: {\n  ...wh,\n  child_status,\n  child_is_closed,\n  child_subject: ticket.subject || '',\n  child_assignee_id: ticket.assignee_id || null\n} }];"
+      },
+      "id": "9ce3cab9-5062-43df-8a69-a8ccb89440b8",
+      "name": "Validar Ticket Filho Fechado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-child-closed",
+              "leftValue": "={{ $json.child_is_closed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4ac72e9d-bcea-4f9c-8294-cfd07c130eb0",
+      "name": "Filho Fechado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const wh = $('Extrair Dados do Webhook').first().json;\nconst child = $('Validar Ticket Filho Fechado').first().json;\nreturn [{ json: {\n  status: 'skipped',\n  reason: 'child_ticket_not_solved_or_closed',\n  origin_ticket_id: wh.origin_ticket_id,\n  child_ticket_id: wh.child_ticket_id,\n  child_status: child.child_status\n} }];"
+      },
+      "id": "b663a9ce-2ee3-4844-a56b-8f90d1c0a472",
+      "name": "Log Filho Nao Fechado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "7a622cd3-5e7c-4ef2-9687-f6ec064f0913",
+      "name": "Resposta Final Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "8683956b-297f-464d-b0bf-4816a59da07e",
+      "name": "Resposta Final Ignorado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        448
+      ]
     }
   ],
   "connections": {
     "Webhook Fechar Origem": {
-      "main": [[
-        {"node": "Resposta 200", "type": "main", "index": 0},
-        {"node": "Extrair Dados do Webhook", "type": "main", "index": 0}
-      ]]
+      "main": [
+        [
+          {
+            "node": "Extrair Dados do Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extrair Dados do Webhook": {
-      "main": [[{"node": "Origem Valida", "type": "main", "index": 0}]]
-    },
-    "Origem Valida": {
       "main": [
-        [{"node": "Fechar Origem e Limpar Campos", "type": "main", "index": 0}],
-        [{"node": "Log Origem Invalida", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Payload Valido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload Valido": {
+      "main": [
+        [
+          {
+            "node": "Buscar Ticket Filho",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Payload Invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Ticket Filho": {
+      "main": [
+        [
+          {
+            "node": "Validar Ticket Filho Fechado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Ticket Filho Fechado": {
+      "main": [
+        [
+          {
+            "node": "Filho Fechado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filho Fechado": {
+      "main": [
+        [
+          {
+            "node": "Fechar Origem e Limpar Campos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Filho Nao Fechado",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Fechar Origem e Limpar Campos": {
-      "main": [[{"node": "Remover Tag impulsis_ativo", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Remover Tag impulsis_ativo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Remover Tag impulsis_ativo": {
-      "main": [[{"node": "Log Sucesso", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Log Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Sucesso": {
+      "main": [
+        [
+          {
+            "node": "Resposta Final Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Payload Invalido": {
+      "main": [
+        [
+          {
+            "node": "Resposta Final Ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Filho Nao Fechado": {
+      "main": [
+        [
+          {
+            "node": "Resposta Final Ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {
@@ -179,5 +430,6 @@
   },
   "meta": {
     "instanceId": "c6f86c928b1521171686fd64db45c641cb12e636101be3972a093c9cfcd6dc3d"
-  }
+  },
+  "name": "Impulsis - Fechar Origem v2 - seguro"
 }
