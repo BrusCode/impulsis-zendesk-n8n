@@ -85,6 +85,7 @@ Os workflows atuais substituem a primeira versao operacional por uma logica mais
   - Busca os grupos ativos do agente no Zendesk.
   - Atualiza o novo ticket com `group_id` + `assignee_id`, evitando redistribuicao automatica para outro agente.
   - Usa `additional_tags`, nao `tags`, para nao sobrescrever tags existentes.
+  - Define assunto padrão `Retorno ticket #<origem>: preencher assunto` para forçar revisão humana antes do encerramento.
   - Se nao encontrar agente/grupo valido, marca erro controlado no ticket novo e nao usa o grupo do ticket original como fallback.
 
 - `workflow2-encerramento.json`: encerramento seguro do ticket original.
