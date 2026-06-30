@@ -169,6 +169,7 @@ Alguns formularios do ticket original possuem campos obrigatorios para resolver 
 2. adiciona comentario interno no ticket filho, onde o macro foi usado;
 3. adiciona comentario interno no ticket original;
 4. adiciona tags de rastreio (`impulsis_falha_fechamento_origem` e `impulsis_pendencia_fechamento`);
-5. nao remove `impulsis_ativo`, pois a origem nao foi encerrada.
+5. nao remove `impulsis_ativo`, pois a origem nao foi encerrada;
+6. bloqueia o loop do gatilho porque o Trigger 3 ignora tickets filhos com `impulsis_falha_fechamento_origem`.
 
-Isso evita que o agente tenha a falsa impressao de que o ticket original foi fechado quando ainda existem campos obrigatorios pendentes.
+Depois que os campos forem preenchidos na origem, o agente aplica novamente a macro no ticket filho. A macro remove `impulsis_falha_fechamento_origem` e libera uma nova tentativa de fechamento.

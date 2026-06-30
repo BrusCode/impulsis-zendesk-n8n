@@ -191,4 +191,21 @@ Record validation errors
 
 Causa: o formulario do ticket original exige campos obrigatorios para status `solved`.
 
-Comportamento atual: o Workflow 2 trata a saida de erro do no de fechamento, extrai os campos pendentes e registra comentario interno no ticket filho e no ticket original. A origem permanece aberta/pendente para preenchimento manual ou reprocessamento.
+Comportamento atual: o Workflow 2 trata a saida de erro do no de fechamento, extrai os campos pendentes em lista curta e registra comentario interno no ticket filho e no ticket original. A origem permanece aberta/pendente.
+
+Para reprocessar: preencher os campos obrigatórios no ticket original e aplicar novamente a macro no ticket filho. A macro remove `impulsis_falha_fechamento_origem`; se ainda houver pendência, o Workflow 2 adiciona a tag novamente e o loop continua bloqueado.
+
+
+### Loop no webhook de encerramento
+
+Sintoma: o mesmo comentário interno de falha aparece várias vezes no ticket filho/original.
+
+Causa: o ticket filho continua `solved`, com `impulsis_encerrar_origem` e `ID Ticket Pai`, então qualquer nova atualização interna pode reacionar o gatilho.
+
+Correção: o gatilho de encerramento deve conter a condição:
+
+```text
+Ticket: Tags | Contains none of | impulsis_falha_fechamento_origem
+```
+
+O Workflow 2 adiciona essa tag quando o fechamento da origem falha. A macro de encerramento remove a tag quando o agente quiser reprocessar.

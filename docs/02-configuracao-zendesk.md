@@ -81,9 +81,12 @@ Caminho: `Admin > Objects and Rules > Triggers > Add Trigger`
 |---|---|---|
 | Ticket: Status | Is | Solved |
 | Ticket: Tags | Contains at least one of | `impulsis_encerrar_origem` |
+| Ticket: Tags | Contains none of | `impulsis_falha_fechamento_origem` |
 | Ticket: Campo ID Ticket Pai (41306351713940) | Is not | (vazio) |
 
 **Acao:** `Notify by active webhook > N8N - Encerramento Impulsis`
+
+> A condição `Contains none of` bloqueia loop quando o Workflow 2 não consegue fechar a origem e adiciona a tag de falha no ticket filho.
 
 **Payload:**
 ```json
