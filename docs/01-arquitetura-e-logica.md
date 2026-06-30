@@ -149,3 +149,26 @@ Regra de selecao do grupo:
 4. Se nenhuma membership valida existir, o fluxo nao roteia para o grupo original; marca erro controlado no ticket novo.
 
 Essa decisao evita perda de distribuicao para outro agente quando o grupo original tem regra automatica de atribuicao.
+
+
+### Assunto padrao do ticket filho
+
+O Workflow 1 atualiza o assunto do ticket filho para:
+
+```text
+Retorno ticket #<ticket_origem>: preencher assunto
+```
+
+O objetivo e evitar que todos os retornos fiquem com o assunto generico gerado automaticamente pelo canal. O texto tambem funciona como marcador operacional para o agente revisar e preencher o assunto real antes do encerramento.
+
+### Falha ao fechar ticket original
+
+Alguns formularios do ticket original possuem campos obrigatorios para resolver o ticket. Quando o Zendesk retorna `422 RecordInvalid` no fechamento da origem, o Workflow 2 agora segue por um ramo de falha controlada:
+
+1. extrai as pendencias retornadas pela API;
+2. adiciona comentario interno no ticket filho, onde o macro foi usado;
+3. adiciona comentario interno no ticket original;
+4. adiciona tags de rastreio (`impulsis_falha_fechamento_origem` e `impulsis_pendencia_fechamento`);
+5. nao remove `impulsis_ativo`, pois a origem nao foi encerrada.
+
+Isso evita que o agente tenha a falsa impressao de que o ticket original foi fechado quando ainda existem campos obrigatorios pendentes.

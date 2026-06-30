@@ -289,7 +289,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ ticket: { group_id: $json.group_id_final, assignee_id: $json.assignee_id_final, status: 'open', additional_tags: ['impulsis_retorno','roteado_agente_automatico'], custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) }, { id: 41270897374356, value: true } ], comment: { body: $json.nota_interna, public: false } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ ticket: { subject: `Retorno ticket #${$json.origin_ticket_id}: preencher assunto`, group_id: $json.group_id_final, assignee_id: $json.assignee_id_final, status: 'open', additional_tags: ['impulsis_retorno','roteado_agente_automatico'], custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) }, { id: 41270897374356, value: true } ], comment: { body: $json.nota_interna, public: false } } }) }}",
         "options": {}
       },
       "id": "3a887415-6ca4-4500-a57e-ad487ad3198e",

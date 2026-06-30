@@ -102,7 +102,8 @@
           "id": "3csoYCJVQsP9ffsq",
           "name": "Zendesk API Header"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -121,7 +122,7 @@
       "typeVersion": 4.2,
       "position": [
         1120,
-        160
+        96
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -140,7 +141,7 @@
       "typeVersion": 2,
       "position": [
         1344,
-        160
+        96
       ]
     },
     {
@@ -249,7 +250,7 @@
       "typeVersion": 1,
       "position": [
         1568,
-        192
+        96
       ]
     },
     {
@@ -265,6 +266,84 @@
       "position": [
         1120,
         448
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const wh = $('Extrair Dados do Webhook').first().json;\n\nfunction collectRaw(value, seen = new Set()) {\n  if (value === null || value === undefined) return [];\n  if (typeof value === 'string') return [value];\n  if (typeof value !== 'object') return [];\n  if (seen.has(value)) return [];\n  seen.add(value);\n\n  let out = [];\n  for (const v of Object.values(value)) {\n    out = out.concat(collectRaw(v, seen));\n  }\n  return out;\n}\n\nconst rawStrings = collectRaw($json);\nconst parsedBodies = [];\n\nfor (const raw of rawStrings) {\n  const candidates = [];\n  candidates.push(raw);\n  const firstBrace = raw.indexOf('{');\n  const lastBrace = raw.lastIndexOf('}');\n  if (firstBrace >= 0 && lastBrace > firstBrace) {\n    candidates.push(raw.slice(firstBrace, lastBrace + 1));\n  }\n\n  for (const candidate of candidates) {\n    try {\n      const parsed = JSON.parse(candidate);\n      if (parsed && typeof parsed === 'object') parsedBodies.push(parsed);\n    } catch (e) {}\n  }\n}\n\nconst details = [];\nfor (const body of parsedBodies) {\n  const base = body.details && body.details.base;\n  if (Array.isArray(base)) details.push(...base);\n}\n\nconst missingFields = details.map(d => ({\n  description: d.description || 'Campo obrigatorio pendente',\n  ticket_field_id: d.ticket_field_id || null,\n  ticket_field_type: d.ticket_field_type || null\n}));\n\nconst fallbackMessage = rawStrings.find(s => s.includes('Record validation errors')) || rawStrings[0] || 'Erro nao estruturado ao fechar ticket original.';\nconst missingText = missingFields.length\n  ? missingFields.map((f, index) => `${index + 1}. ${f.description}${f.ticket_field_id ? ` (field_id: ${f.ticket_field_id})` : ''}`).join('\\n')\n  : fallbackMessage;\n\nconst note = [\n  'Falha ao fechar automaticamente o ticket de origem.',\n  '',\n  'O ticket filho foi encerrado, mas o Zendesk bloqueou o fechamento da origem por pendencias no formulario/campos obrigatorios.',\n  '',\n  'Ticket de origem: #' + wh.origin_ticket_id,\n  'Ticket filho: #' + wh.child_ticket_id,\n  '',\n  'Pendencias retornadas pelo Zendesk:',\n  missingText,\n  '',\n  'Acao necessaria: preencher os campos obrigatorios no ticket de origem e encerrar manualmente ou reprocessar o webhook.'\n].join('\\n');\n\nreturn [{ json: {\n  status: 'origin_close_failed',\n  reason: 'zendesk_validation_error',\n  origin_ticket_id: wh.origin_ticket_id,\n  child_ticket_id: wh.child_ticket_id,\n  agent_name: wh.agent_name,\n  agent_email: wh.agent_email,\n  missing_fields: missingFields,\n  missing_fields_text: missingText,\n  nota_falha_fechamento: note,\n  raw_error: $json\n} }];"
+      },
+      "id": "c7ba968d-34f9-4ebe-b517-6daa313de032",
+      "name": "Preparar Nota Falha Fechamento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $json.child_ticket_id }}.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket: { additional_tags: ['impulsis_falha_fechamento_origem'], comment: { body: $json.nota_falha_fechamento, public: false } } }) }}",
+        "options": {}
+      },
+      "id": "639319ef-5966-45d7-89da-0900697f1e7a",
+      "name": "Nota Falha no Ticket Filho",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1344,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $('Preparar Nota Falha Fechamento').first().json.origin_ticket_id }}.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ticket: { additional_tags: ['impulsis_pendencia_fechamento'], comment: { body: $('Preparar Nota Falha Fechamento').first().json.nota_falha_fechamento, public: false } } }) }}",
+        "options": {}
+      },
+      "id": "a415a72f-d139-43c3-8405-289913f91371",
+      "name": "Nota Falha no Ticket Original",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1568,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const failure = $('Preparar Nota Falha Fechamento').first().json;\nreturn [{ json: {\n  status: 'origin_close_failed_notified',\n  origin_ticket_id: failure.origin_ticket_id,\n  child_ticket_id: failure.child_ticket_id,\n  missing_fields: failure.missing_fields,\n  notified_child: true,\n  notified_origin: true\n} }];"
+      },
+      "id": "d3f34129-4f78-4357-b7c4-f6c61d5d59d1",
+      "name": "Log Falha Fechamento Notificada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        288
       ]
     }
   ],
@@ -357,6 +436,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Preparar Nota Falha Fechamento",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -394,6 +480,50 @@
       ]
     },
     "Log Filho Nao Fechado": {
+      "main": [
+        [
+          {
+            "node": "Resposta Final Ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Nota Falha Fechamento": {
+      "main": [
+        [
+          {
+            "node": "Nota Falha no Ticket Filho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nota Falha no Ticket Filho": {
+      "main": [
+        [
+          {
+            "node": "Nota Falha no Ticket Original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nota Falha no Ticket Original": {
+      "main": [
+        [
+          {
+            "node": "Log Falha Fechamento Notificada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Falha Fechamento Notificada": {
       "main": [
         [
           {

@@ -178,3 +178,17 @@ Correcao aplicada:
 - busca ticket filho;
 - so fecha origem se filho estiver `solved` ou `closed`;
 - envia body JSON no fechamento e na remocao da tag `impulsis_ativo`.
+
+
+### 422 RecordInvalid ao fechar origem
+
+Sintoma: o no `Fechar Origem e Limpar Campos` retorna erro semelhante a:
+
+```text
+Record validation errors
+<campo>: é necessário(a) para resolver um ticket
+```
+
+Causa: o formulario do ticket original exige campos obrigatorios para status `solved`.
+
+Comportamento atual: o Workflow 2 trata a saida de erro do no de fechamento, extrai os campos pendentes e registra comentario interno no ticket filho e no ticket original. A origem permanece aberta/pendente para preenchimento manual ou reprocessamento.
