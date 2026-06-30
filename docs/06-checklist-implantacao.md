@@ -34,6 +34,7 @@ Use este checklist para garantir que todos os componentes estao configurados ant
 - [ ] **Trigger 3** `[Impulsis] Webhook Encerramento - Fechar Origem` criado e ATIVO
   - [ ] Condicao: status = solved
   - [ ] Condicao: tag contem `impulsis_encerrar_origem`
+  - [ ] Condicao: tag nao contem `impulsis_falha_fechamento_origem`
   - [ ] Condicao: campo ID Ticket Pai nao vazio
   - [ ] Acao: notifica webhook Encerramento com payload correto
 
@@ -44,6 +45,7 @@ Use este checklist para garantir que todos os componentes estao configurados ant
 - [ ] Macro `[Impulsis] Encerrar Sessao - Fechar Retorno + Origem` criado
   - [ ] Acao: status = solved
   - [ ] Acao: adiciona tag `impulsis_encerrar_origem`
+  - [ ] Acao: remove tag `impulsis_falha_fechamento_origem`
   - [ ] Acao: nota interna com placeholder `{{ticket.ticket_field_41306351713940}}`
 - [ ] Macro adicionado ao workspace de agentes WhatsApp (opcional mas recomendado)
 

@@ -22,6 +22,7 @@ Caminho: `Admin > Workspaces > Macros > Add Macro`
 |---|---|---|
 | Ticket: Status | — | Solved |
 | Ticket: Add tags | — | `impulsis_encerrar_origem` |
+| Ticket: Remove tags | — | `impulsis_falha_fechamento_origem` |
 | Ticket: Add comment | Interno | Ver template abaixo |
 
 ### Template do Comentario Interno
@@ -103,3 +104,10 @@ Nesse caso, o agente pode:
 2. Aplicar o macro novamente
 
 Ou encerrar o ticket original manualmente.
+
+
+## Reprocessamento apos falha de fechamento
+
+Se o Workflow 2 não conseguir fechar o ticket original por campos obrigatórios pendentes, ele adiciona `impulsis_falha_fechamento_origem` no ticket filho. Essa tag bloqueia o gatilho para evitar loop.
+
+Depois que os campos obrigatórios forem preenchidos no ticket original, o agente deve aplicar novamente este macro no ticket filho. O macro remove `impulsis_falha_fechamento_origem`, mantém/adiciona `impulsis_encerrar_origem` e permite uma nova tentativa de fechamento.

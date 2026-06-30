@@ -37,6 +37,8 @@ impulsis-zendesk-n8n/
 | `impulsis_novo_contato` | Ticket novo | Semaforo: cliente respondeu |
 | `roteado_agente_automatico` | Ticket novo | Trava anti-reprocessamento |
 | `impulsis_encerrar_origem` | Ticket novo | Gatilho para fechar ticket original |
+| `impulsis_falha_fechamento_origem` | Ticket novo | Trava anti-loop quando a origem não fecha por pendências |
+| `impulsis_pendencia_fechamento` | Ticket original | Indica que há campos obrigatórios pendentes para fechamento |
 
 ## Workflows N8N
 
