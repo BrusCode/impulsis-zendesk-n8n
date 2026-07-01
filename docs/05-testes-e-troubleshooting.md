@@ -58,7 +58,7 @@
 **Resultado esperado:**
 - Dois tickets novos criados pelo Sunshine
 - IA-Follow adiciona `impulsis_novo_contato` em ambos
-- Workflow 1 processa o primeiro, adiciona `roteado_agente_automatico`
+- Workflow 1 processa o primeiro e adiciona `roteado_agente_automatico` via Tags API
 - Quando o segundo chega, o Workflow 1 detecta que ja existe ticket com `roteado_agente_automatico` para o mesmo requester e pula o roteamento
 
 **Validacao:** Apenas um ticket novo deve ter o `assignee` correto e o campo `ID Ticket Pai` preenchido.
@@ -158,15 +158,21 @@ Correcao aplicada no Workflow 1:
 ={{ 'https://webposto.zendesk.com/api/v2/users/' + (($json.user && $json.user.id) || $('Validar Duplicidade de Filho').first().json.assignee_id_final) + '/group_memberships.json' }}
 ```
 
-### Tags sobrescritas no update do ticket
+### Tags não aparecem ou não bloqueiam reprocessamento
 
-Causa: usar `tags` em `PUT /api/v2/tickets/{id}.json` pode substituir tags existentes.
+Causa: usar `tags` em `PUT /api/v2/tickets/{id}.json` pode substituir tags existentes, e `additional_tags` dentro do update comum do ticket pode não produzir o comportamento esperado em todos os cenários do workflow.
 
 Correcao aplicada:
 
-```js
-additional_tags: ['impulsis_retorno', 'roteado_agente_automatico']
+```http
+PUT /api/v2/tickets/{ticket_id}/tags.json
 ```
+
+```json
+{ "tags": ["impulsis_retorno", "roteado_agente_automatico"] }
+```
+
+Agora cada tag operacional crítica é aplicada por nó HTTP dedicado da Tags API. Os nós `PUT /api/v2/tickets/{id}.json` ficam apenas com status, campos customizados e comentários.
 
 ### Workflow 2 fechando origem sem validar filho
 
@@ -193,7 +199,7 @@ Causa: o formulario do ticket original exige campos obrigatorios para status `so
 
 Comportamento atual: o Workflow 2 trata a saida de erro do no de fechamento, extrai os campos pendentes em lista curta e registra comentario interno no ticket filho e no ticket original. A origem permanece aberta/pendente.
 
-Para reprocessar: preencher os campos obrigatórios no ticket original e aplicar novamente a macro no ticket filho. A macro remove `impulsis_falha_fechamento_origem`; se ainda houver pendência, o Workflow 2 adiciona a tag novamente e o loop continua bloqueado.
+Para reprocessar: preencher os campos obrigatórios no ticket original e aplicar novamente a macro no ticket filho. A macro remove `impulsis_falha_fechamento_origem`; se ainda houver pendência, o Workflow 2 adiciona a tag novamente via Tags API e o loop continua bloqueado.
 
 
 ### Loop no webhook de encerramento

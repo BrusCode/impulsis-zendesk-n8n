@@ -86,7 +86,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ ticket: { status: 'solved', additional_tags: ['impulsis_origem_fechada'], custom_fields: [ { id: 50639967936148, value: false }, { id: 41270881369364, value: false } ], comment: { body: 'Ticket de origem fechado automaticamente apos conclusao do ticket filho #' + $('Extrair Dados do Webhook').first().json.child_ticket_id + '. Agente: ' + ($('Extrair Dados do Webhook').first().json.agent_name || 'nao informado') + ' (' + ($('Extrair Dados do Webhook').first().json.agent_email || 'sem email') + ').', public: false } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ ticket: { status: 'solved', custom_fields: [ { id: 50639967936148, value: false }, { id: 41270881369364, value: false } ], comment: { body: 'Ticket de origem fechado automaticamente apos conclusao do ticket filho #' + $('Extrair Dados do Webhook').first().json.child_ticket_id + '. Agente: ' + ($('Extrair Dados do Webhook').first().json.agent_name || 'nao informado') + ' (' + ($('Extrair Dados do Webhook').first().json.agent_email || 'sem email') + ').', public: false } } }) }}",
         "options": {}
       },
       "id": "56ae8658-cfcc-4d8a-8f24-c25dea316971",
@@ -121,7 +121,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1120,
+        1344,
         96
       ],
       "credentials": {
@@ -289,7 +289,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ ticket: { additional_tags: ['impulsis_falha_fechamento_origem'], comment: { body: $json.nota_falha_fechamento, public: false } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ ticket: { comment: { body: $json.nota_falha_fechamento, public: false } } }) }}",
         "options": {}
       },
       "id": "639319ef-5966-45d7-89da-0900697f1e7a",
@@ -297,7 +297,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1344,
+        1568,
         288
       ],
       "credentials": {
@@ -315,7 +315,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ ticket: { additional_tags: ['impulsis_pendencia_fechamento'], comment: { body: $('Preparar Nota Falha Fechamento').first().json.nota_falha_fechamento, public: false } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ ticket: { comment: { body: $('Preparar Nota Falha Fechamento').first().json.nota_falha_fechamento, public: false } } }) }}",
         "options": {}
       },
       "id": "a415a72f-d139-43c3-8405-289913f91371",
@@ -323,7 +323,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1568,
+        2016,
         288
       ],
       "credentials": {
@@ -342,9 +342,87 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1792,
+        2240,
         288
       ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $('Extrair Dados do Webhook').first().json.origin_ticket_id }}/tags.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['impulsis_origem_fechada'] }) }}",
+        "options": {}
+      },
+      "id": "87e9b550-b7dd-4e72-aa3d-16ae85dccaa7",
+      "name": "Adicionar Tag Origem Fechada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        96
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $('Preparar Nota Falha Fechamento').first().json.child_ticket_id }}/tags.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['impulsis_falha_fechamento_origem'] }) }}",
+        "options": {}
+      },
+      "id": "ff722fa8-612a-4695-9756-ad4c6467bb52",
+      "name": "Adicionar Tag Falha no Ticket Filho",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1344,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $('Preparar Nota Falha Fechamento').first().json.origin_ticket_id }}/tags.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['impulsis_pendencia_fechamento'] }) }}",
+        "options": {}
+      },
+      "id": "3496e56f-def3-4d4c-bf00-6e413e6acf26",
+      "name": "Adicionar Tag Pendencia no Ticket Original",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1792,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
     }
   ],
   "connections": {
@@ -432,7 +510,7 @@
       "main": [
         [
           {
-            "node": "Remover Tag impulsis_ativo",
+            "node": "Adicionar Tag Origem Fechada",
             "type": "main",
             "index": 0
           }
@@ -494,7 +572,7 @@
       "main": [
         [
           {
-            "node": "Nota Falha no Ticket Filho",
+            "node": "Adicionar Tag Falha no Ticket Filho",
             "type": "main",
             "index": 0
           }
@@ -516,7 +594,7 @@
       "main": [
         [
           {
-            "node": "Log Falha Fechamento Notificada",
+            "node": "Adicionar Tag Pendencia no Ticket Original",
             "type": "main",
             "index": 0
           }
@@ -528,6 +606,39 @@
         [
           {
             "node": "Resposta Final Ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adicionar Tag Origem Fechada": {
+      "main": [
+        [
+          {
+            "node": "Remover Tag impulsis_ativo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adicionar Tag Falha no Ticket Filho": {
+      "main": [
+        [
+          {
+            "node": "Nota Falha no Ticket Filho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adicionar Tag Pendencia no Ticket Original": {
+      "main": [
+        [
+          {
+            "node": "Log Falha Fechamento Notificada",
             "type": "main",
             "index": 0
           }

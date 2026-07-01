@@ -289,7 +289,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ ticket: { subject: `Retorno ticket #${$json.origin_ticket_id}: preencher assunto`, group_id: $json.group_id_final, assignee_id: $json.assignee_id_final, status: 'open', additional_tags: ['impulsis_retorno','roteado_agente_automatico'], custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) }, { id: 41270897374356, value: true } ], comment: { body: $json.nota_interna, public: false } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ ticket: { subject: `Retorno ticket #${$json.origin_ticket_id}: preencher assunto`, group_id: $json.group_id_final, assignee_id: $json.assignee_id_final, status: 'open', custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) }, { id: 41270897374356, value: true } ], comment: { body: $json.nota_interna, public: false } } }) }}",
         "options": {}
       },
       "id": "3a887415-6ca4-4500-a57e-ad487ad3198e",
@@ -323,7 +323,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        464,
+        688,
         -128
       ],
       "credentials": {
@@ -422,7 +422,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ ticket: { status: 'open', additional_tags: ['impulsis_retorno','erro_roteamento_agente'], custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) } ], comment: { body: $json.nota_erro_roteamento, public: false } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ ticket: { status: 'open', custom_fields: [ { id: 41306351713940, value: String($json.origin_ticket_id) } ], comment: { body: $json.nota_erro_roteamento, public: false } } }) }}",
         "options": {}
       },
       "id": "2f1e4e9a-f159-4280-8bff-550a36f71756",
@@ -431,6 +431,58 @@
       "typeVersion": 4.2,
       "position": [
         240,
+        112
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $('Preparar Payload de Atualizacao').first().json.new_ticket_id }}/tags.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['impulsis_retorno', 'roteado_agente_automatico'] }) }}",
+        "options": {}
+      },
+      "id": "796edfa8-5ab2-4eb3-a580-d523e43ac019",
+      "name": "Adicionar Tags no Ticket Novo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        -128
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3csoYCJVQsP9ffsq",
+          "name": "Zendesk API Header"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://webposto.zendesk.com/api/v2/tickets/{{ $('Preparar Payload de Atualizacao').first().json.new_ticket_id }}/tags.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['impulsis_retorno', 'erro_roteamento_agente'] }) }}",
+        "options": {}
+      },
+      "id": "fe1c8d0f-8eef-4978-b2e9-973caa7db2ac",
+      "name": "Adicionar Tags de Erro no Ticket Novo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
         112
       ],
       "credentials": {
@@ -586,7 +638,7 @@
       "main": [
         [
           {
-            "node": "Nota no Ticket Original",
+            "node": "Adicionar Tags no Ticket Novo",
             "type": "main",
             "index": 0
           }
@@ -616,6 +668,28 @@
         [
           {
             "node": "Marcar Erro de Roteamento no Ticket Novo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adicionar Tags no Ticket Novo": {
+      "main": [
+        [
+          {
+            "node": "Nota no Ticket Original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Erro de Roteamento no Ticket Novo": {
+      "main": [
+        [
+          {
+            "node": "Adicionar Tags de Erro no Ticket Novo",
             "type": "main",
             "index": 0
           }

@@ -54,6 +54,7 @@ Resumo da sessao: [agente preenche manualmente se necessario]
 [Trigger: Webhook Encerramento Impulsis detecta]
   - status = solved
   - tag: impulsis_encerrar_origem
+  - tag NAO contem: impulsis_falha_fechamento_origem
   - campo ID Ticket Pai preenchido
          |
          v
@@ -61,8 +62,9 @@ Resumo da sessao: [agente preenche manualmente se necessario]
   1. Valida ID do ticket original
   2. Fecha ticket original (status = solved)
   3. Limpa campo Retorno Ativo (false)
-  4. Remove tag impulsis_ativo
-  5. Adiciona nota de encerramento em ambos
+  4. Adiciona tag impulsis_origem_fechada via Tags API
+  5. Remove tag impulsis_ativo
+  6. Adiciona nota de encerramento
 ```
 
 ---
@@ -111,3 +113,5 @@ Ou encerrar o ticket original manualmente.
 Se o Workflow 2 não conseguir fechar o ticket original por campos obrigatórios pendentes, ele adiciona `impulsis_falha_fechamento_origem` no ticket filho. Essa tag bloqueia o gatilho para evitar loop.
 
 Depois que os campos obrigatórios forem preenchidos no ticket original, o agente deve aplicar novamente este macro no ticket filho. O macro remove `impulsis_falha_fechamento_origem`, mantém/adiciona `impulsis_encerrar_origem` e permite uma nova tentativa de fechamento.
+
+Importante: a tag `impulsis_falha_fechamento_origem` deve estar como condição negativa no Trigger 3. Sem essa condição, comentários internos gerados pelo próprio Workflow 2 podem reacionar o webhook em loop.

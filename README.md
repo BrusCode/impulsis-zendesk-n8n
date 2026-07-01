@@ -39,6 +39,8 @@ impulsis-zendesk-n8n/
 | `impulsis_encerrar_origem` | Ticket novo | Gatilho para fechar ticket original |
 | `impulsis_falha_fechamento_origem` | Ticket novo | Trava anti-loop quando a origem não fecha por pendências |
 | `impulsis_pendencia_fechamento` | Ticket original | Indica que há campos obrigatórios pendentes para fechamento |
+| `impulsis_origem_fechada` | Ticket original | Auditoria: origem fechada pelo Workflow 2 |
+| `erro_roteamento_agente` | Ticket novo | Falha controlada: agente/grupo válido não encontrado |
 
 ## Workflows N8N
 
@@ -86,7 +88,7 @@ Os workflows atuais substituem a primeira versao operacional por uma logica mais
   - Identifica o agente pelo comentario privado mais recente do Impulsis.
   - Busca os grupos ativos do agente no Zendesk.
   - Atualiza o novo ticket com `group_id` + `assignee_id`, evitando redistribuicao automatica para outro agente.
-  - Usa `additional_tags`, nao `tags`, para nao sobrescrever tags existentes.
+  - Aplica tags por nós dedicados da Tags API (`PUT /api/v2/tickets/{id}/tags.json`), sem depender de `additional_tags` no update do ticket.
   - Define assunto padrão `Retorno ticket #<origem>: preencher assunto` para forçar revisão humana antes do encerramento.
   - Se nao encontrar agente/grupo valido, marca erro controlado no ticket novo e nao usa o grupo do ticket original como fallback.
 
@@ -95,6 +97,7 @@ Os workflows atuais substituem a primeira versao operacional por uma logica mais
   - Busca o ticket filho antes de fechar a origem.
   - Fecha a origem apenas se o filho estiver `solved` ou `closed`.
   - Limpa o campo de controle e remove `impulsis_ativo` com body JSON valido.
+  - Aplica tags de auditoria/falha por Tags API dedicada.
   - Responde ao webhook somente ao final do fluxo.
 
 > O arquivo `tutorial.html` ainda descreve a documentacao inicial e sera revisado em uma etapa posterior.

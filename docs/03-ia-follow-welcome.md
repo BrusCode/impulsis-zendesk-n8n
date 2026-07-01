@@ -56,11 +56,10 @@ Se o construtor de dialogo suportar chamadas HTTP com condicionais:
 
 **Adicionar tag via API:**
 - Metodo: PUT
-- URL: `https://webposto.zendesk.com/api/v2/tickets/{{ticket.id}}.json`
-- Body: `{"ticket": {"tags": ["impulsis_novo_contato"]}}`
+- URL: `https://webposto.zendesk.com/api/v2/tickets/{{ticket.id}}/tags.json`
+- Body: `{"tags": ["impulsis_novo_contato"]}`
 
-> Atencao: o PUT de tags substitui todas as tags existentes. Use o endpoint de tags especifico para adicionar sem substituir:
-> POST `/api/v2/tickets/{{ticket.id}}/tags.json` com body `{"tags": ["impulsis_novo_contato"]}`
+> Nao use `PUT /api/v2/tickets/{{ticket.id}}.json` com `{"ticket": {"tags": [...]}}`, pois isso pode substituir tags existentes. Use sempre o endpoint especifico `/tags.json` para adicionar tags sem sobrescrever o conjunto atual.
 
 ---
 
