@@ -131,3 +131,36 @@ No N8N, configure a credencial `httpBasicAuth`:
 - **Password:** `SEU_API_TOKEN_ZENDESK`
 
 Formate o username exatamente como `email/token` para autenticacao por token (nao senha).
+
+---
+
+## Tags Operacionais
+
+As tags abaixo são usadas pelos gatilhos, macros, IA-Follow e workflows. Cadastre/padronize os nomes no Zendesk antes dos testes para facilitar auditoria, filtros e evitar divergência de grafia.
+
+| Tag | Aplicada por | Uso |
+|---|---|---|
+| `impulsis_ativo` | Impulsis/Zendesk | Marca o ticket original com retorno ativo |
+| `sessao_encerrada_agente` | Impulsis/Zendesk | Registra encerramento da sessão pelo agente |
+| `impulsis_novo_contato` | IA-Follow | Semáforo para acionar o Workflow 1 |
+| `impulsis_retorno` | Workflow 1 via Tags API | Marca o ticket filho como retorno Impulsis |
+| `roteado_agente_automatico` | Workflow 1 via Tags API | Trava anti-reprocessamento do roteamento |
+| `erro_roteamento_agente` | Workflow 1 via Tags API | Falha controlada quando não há agente/grupo válido |
+| `impulsis_encerrar_origem` | Macro de encerramento | Aciona o Workflow 2 |
+| `impulsis_origem_fechada` | Workflow 2 via Tags API | Auditoria de origem fechada automaticamente |
+| `impulsis_falha_fechamento_origem` | Workflow 2 via Tags API | Trava anti-loop quando a origem não fecha |
+| `impulsis_pendencia_fechamento` | Workflow 2 via Tags API | Marca a origem com pendência de campos obrigatórios |
+
+Os workflows aplicam tags com endpoint dedicado:
+
+```http
+PUT /api/v2/tickets/{ticket_id}/tags.json
+```
+
+Body:
+
+```json
+{ "tags": ["impulsis_retorno"] }
+```
+
+Não use `tags` nem `additional_tags` dentro do `PUT /api/v2/tickets/{id}.json` dos workflows. O update do ticket fica responsável por campos/status/comentários; a Tags API fica responsável por adicionar/remover tags.

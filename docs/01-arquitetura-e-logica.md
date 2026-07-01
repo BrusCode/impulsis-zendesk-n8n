@@ -73,12 +73,14 @@ O `problem_id` do Zendesk so funciona quando o ticket pai e do tipo `Problem`. N
       - group_id = grupo confirmado do agente
       - assignee_id = agente que deve falar com o cliente
       - status = open
-      - additional_tags adiciona: impulsis_retorno, roteado_agente_automatico
       - campo ID Ticket Pai = ID do ticket original
       - campo Ticket Filho = true
       - nota interna com contexto completo
-   g. Se nao houver agente/grupo valido, marca o novo ticket com `erro_roteamento_agente` e nao usa o grupo original como fallback
-   h. Atualiza o ticket original:
+   g. Aplica tags no ticket novo via Tags API:
+      - impulsis_retorno
+      - roteado_agente_automatico
+   h. Se nao houver agente/grupo valido, marca o novo ticket com `erro_roteamento_agente` via Tags API e nao usa o grupo original como fallback
+   i. Atualiza o ticket original:
       - campo Ticket Pai = true
       - nota interna confirmando roteamento
 
@@ -104,8 +106,9 @@ O `problem_id` do Zendesk so funciona quando o ticket pai e do tipo `Problem`. N
     c. Continua apenas se o filho estiver `solved` ou `closed`
     d. Fecha ticket original (status = solved)
     e. Limpa campo Retorno Ativo (false) no ticket original
-    f. Remove tag impulsis_ativo do ticket original
-    g. Adiciona nota interna de encerramento e responde ao webhook ao final
+    f. Adiciona tag impulsis_origem_fechada via Tags API
+    g. Remove tag impulsis_ativo do ticket original
+    h. Adiciona nota interna de encerramento e responde ao webhook ao final
 ```
 
 ---
@@ -132,6 +135,7 @@ Se o cliente enviar duas mensagens rapidamente antes do roteamento ser concluido
 |---|---|---|
 | `Retorno Ativo` (50639967936148) | `false` | Evita reentrada indevida em novo disparo futuro |
 | `impulsis_ativo` | Removida | Evita falso positivo no IA-Follow em novo ciclo |
+| `impulsis_origem_fechada` | Adicionada | Auditoria de fechamento automático da origem |
 | `roteado_agente_automatico` | Mantida | Auditoria e trava historica |
 | `ID Ticket Pai` (41306351713940) | Mantido | Rastreabilidade historica |
 | `impulsis_retorno` no ticket filho | Mantida | Dado analitico do ciclo |
@@ -168,8 +172,28 @@ Alguns formularios do ticket original possuem campos obrigatorios para resolver 
 1. extrai as pendencias retornadas pela API;
 2. adiciona comentario interno no ticket filho, onde o macro foi usado;
 3. adiciona comentario interno no ticket original;
-4. adiciona tags de rastreio (`impulsis_falha_fechamento_origem` e `impulsis_pendencia_fechamento`);
+4. adiciona tags de rastreio pela Tags API (`impulsis_falha_fechamento_origem` e `impulsis_pendencia_fechamento`);
 5. nao remove `impulsis_ativo`, pois a origem nao foi encerrada;
 6. bloqueia o loop do gatilho porque o Trigger 3 ignora tickets filhos com `impulsis_falha_fechamento_origem`.
 
 Depois que os campos forem preenchidos na origem, o agente aplica novamente a macro no ticket filho. A macro remove `impulsis_falha_fechamento_origem` e libera uma nova tentativa de fechamento.
+
+### Aplicacao de tags
+
+Os workflows nao usam `tags` nem `additional_tags` dentro de `PUT /api/v2/tickets/{id}.json`. Todas as tags operacionais adicionadas pelos workflows usam endpoint dedicado:
+
+```http
+PUT /api/v2/tickets/{ticket_id}/tags.json
+```
+
+Body:
+
+```json
+{ "tags": ["nome_da_tag"] }
+```
+
+Isso evita sobrescrever tags existentes e deixa a criacao/aplicacao das travas mais previsivel. A remocao de `impulsis_ativo` continua usando:
+
+```http
+DELETE /api/v2/tickets/{ticket_id}/tags.json
+```

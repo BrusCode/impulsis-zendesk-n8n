@@ -10,6 +10,17 @@ Use este checklist para garantir que todos os componentes estao configurados ant
 - [ ] Campo **ID Ticket Pai** (ID: `41306351713940`) existe e e do tipo Texto
 - [ ] Campo **Ticket Pai** (ID: `41270881369364`) existe e e do tipo Checkbox
 - [ ] Campo **Ticket Filho** (ID: `41270897374356`) existe e e do tipo Checkbox
+- [ ] Tags operacionais padronizadas/cadastradas no Zendesk:
+  - [ ] `impulsis_ativo`
+  - [ ] `sessao_encerrada_agente`
+  - [ ] `impulsis_novo_contato`
+  - [ ] `impulsis_retorno`
+  - [ ] `roteado_agente_automatico`
+  - [ ] `erro_roteamento_agente`
+  - [ ] `impulsis_encerrar_origem`
+  - [ ] `impulsis_origem_fechada`
+  - [ ] `impulsis_falha_fechamento_origem`
+  - [ ] `impulsis_pendencia_fechamento`
 - [ ] Webhook **N8N - Roteamento Impulsis** criado e testado (status 200)
 - [ ] Webhook **N8N - Encerramento Impulsis** criado e testado (status 200)
 
@@ -67,6 +78,8 @@ Use este checklist para garantir que todos os componentes estao configurados ant
 - [ ] Path do webhook anotado e configurado no Webhook do Zendesk
 - [ ] Workflow ATIVO (toggle on)
 - [ ] Teste manual: enviar POST ao webhook com payload simulado
+- [ ] Confirmar que os nós de Tags API aplicam `impulsis_retorno` e `roteado_agente_automatico`
+- [ ] Confirmar que o ramo de erro aplica `erro_roteamento_agente`
 - [ ] Verificar execucao em N8N > Executions
 
 ---
@@ -78,6 +91,9 @@ Use este checklist para garantir que todos os componentes estao configurados ant
 - [ ] Path do webhook anotado e configurado no Webhook do Zendesk
 - [ ] Workflow ATIVO (toggle on)
 - [ ] Teste manual: enviar POST ao webhook com payload simulado
+- [ ] Confirmar que sucesso aplica `impulsis_origem_fechada`
+- [ ] Confirmar que falha aplica `impulsis_falha_fechamento_origem` antes de comentar o ticket filho
+- [ ] Confirmar que falha aplica `impulsis_pendencia_fechamento` no ticket original
 - [ ] Verificar execucao em N8N > Executions
 
 ---
